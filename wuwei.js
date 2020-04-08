@@ -74,9 +74,9 @@ var wuwei = function() {
             if(this.isMoveRight && this.isMoveLeft) { // wtb xor
                 this.dx = 0;
             } else if(this.isMoveRight) {
-                this.dx = -1;
-            } else if(this.isMoveLeft) {
                 this.dx = 1;
+            } else if(this.isMoveLeft) {
+                this.dx = -1;
             } else {
                 this.dx = 0;
             }
@@ -86,7 +86,7 @@ var wuwei = function() {
             //console.log(this.x);
 
             if(this.isShooting) {
-                new Missile(this.x, this.y, 0, 1);
+                new Missile(this.x, this.y, 0, -1);
                 this.isShooting = false;
             }
         }
@@ -118,30 +118,31 @@ var wuwei = function() {
 
     return {
         fieldWidth  : 40, // chars (or ems)... runs good!
-        fieldHeight : 40,
+        fieldHeight : 24,
 
         updateInterval : 60/1000, // 60 frames a second, man
 
-        'play': function(element) {
-            var objElems = new Map;
+        'play': function(container) {
+            container.style.position = "relative";
+            container.style.width  = this.fieldWidth + 'em';
+            container.style.height = this.fieldHeight + 'em';
+            container.style.backgroundColor = '#eeeeee';
 
-            // TODO ok turns out you can render text to a canvas, AND
-            // you can read pizels from a canvas.  so we could do
-            // pixel collisions.  of course, if we do that, we can't
-            // have a background picture.. :}  might render faster
-            // anyway
+            var field = document.createElement("canvas");
+            container.appendChild(field);
+            field.style.width ='100%';
+            field.style.height='100%';
+            // ...then set the internal size to match
+            field.width  = field.offsetWidth;
+            field.height = field.offsetHeight;
 
-            element.style.position = "relative";
-            element.style.width  = this.fieldWidth + 'em';
-            element.style.height = this.fieldHeight + 'em';
-            element.style.backgroundColor = '#eeeeee';
+            var fontSize = parseFloat(window.getComputedStyle(container, null).getPropertyValue('font-size'));
 
-            var charWidth  = element.clientWidth  / this.fieldWidth;
-            var charHeight = element.clientHeight / this.fieldHeight;
+            var charWidth  = container.clientWidth  / this.fieldWidth;
+            var charHeight = container.clientHeight / this.fieldHeight;
 
-            for(let iy = this.fieldHeight - 1; iy > this.fieldHeight / 2; iy--) {
-                for(let ix = 0; ix < this.fieldWidth/2; ix += 2) {
-                    //var inv1 = new Invader(element.clientWidth/2, element.clientHeight * .9);
+            for(let iy = 1; iy < 5; iy++) {
+                for(let ix = 0; ix < this.fieldWidth; ix += 2) {
                     var inv1 = new Invader(ix * charWidth, iy * charHeight);
                 }
             }
@@ -149,7 +150,7 @@ var wuwei = function() {
             // we need at least one player;  better though if this is on
             // some event.. hmm XXX  also this shuld not be tied to the
             // element, per se... like if there's more than one element
-            var p1 = new Player(element.clientWidth/2, element.clientHeight * .1);
+            var p1 = new Player(container.clientWidth/2, container.clientHeight * .9);
             controls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
             controls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
             controls[68] = p1.moveRight.bind(p1); // 68 = 'd'
@@ -167,25 +168,14 @@ var wuwei = function() {
                     obj.behave(deltaT);
                 }
 
-                // draw stuffs....  this might be over elaborate
+                // draw the game elements.  looks like we don't
+                // have to bother double buffering.  runs good
+                // as-is, on my machine, anyway!
+                var ctx = field.getContext('2d');
+                ctx.clearRect(0, 0, field.width, field.height);
+                ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
                 for (let obj of gameObjects.values()) {
-                    let oel = objElems.get(obj.id);
-                    if(!oel) {
-                        oel = document.createElement("span");
-                        oel.style.position = "absolute";
-
-                        // XXX will need to remove excess elements
-                        // when the objects die or whatever.  Or keep
-                        // a pool?  might be easier to punt and have
-                        // element be an attribute of the object but
-                        // then we can only have one representation of
-                        // the game state...
-                        element.appendChild(oel);
-                        objElems.set(obj.id, oel);
-                    }
-                    oel.style.right  = obj.x;
-                    oel.style.bottom = obj.y;
-                    oel.innerText = obj.appearance;
+                    ctx.fillText(obj.appearance, obj.x, obj.y);
                 }
 
                 lastUpdate = now;
