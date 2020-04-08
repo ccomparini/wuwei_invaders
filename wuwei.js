@@ -42,7 +42,8 @@ var wuwei = function() {
 
     class Invader extends GameObj {
         constructor(x, y) {
-            super("無", x, y);
+            //super("無", x, y);
+            super("x", x, y);
             this.nextMoveMs = 0;
             liveInvaders.set(this.id, this);
         }
@@ -53,8 +54,10 @@ var wuwei = function() {
             if(this.nextMoveMs <= 0) {
                 if(this.appearance === "無") {
                     this.appearance = "爲";
+//this.appearance = "o";
                 } else {
                     this.appearance = "無";
+//this.appearance = "x";
                 }
                 this.nextMoveMs = 500;
             }
@@ -79,6 +82,8 @@ var wuwei = function() {
             }
 
             super.behave(dt);
+
+            //console.log(this.x);
 
             if(this.isShooting) {
                 new Missile(this.x, this.y, 0, 1);
@@ -112,7 +117,7 @@ var wuwei = function() {
     }
 
     return {
-        fieldWidth  : 40, // chars... runs good!
+        fieldWidth  : 40, // chars (or ems)... runs good!
         fieldHeight : 40,
 
         updateInterval : 60/1000, // 60 frames a second, man
@@ -120,18 +125,35 @@ var wuwei = function() {
         'play': function(element) {
             var objElems = new Map;
 
+            // TODO ok turns out you can render text to a canvas, AND
+            // you can read pizels from a canvas.  so we could do
+            // pixel collisions.  of course, if we do that, we can't
+            // have a background picture.. :}  might render faster
+            // anyway
+
             element.style.position = "relative";
             element.style.width  = this.fieldWidth + 'em';
             element.style.height = this.fieldHeight + 'em';
             element.style.backgroundColor = '#eeeeee';
-var inv1 = new Invader(element.clientWidth/2, element.clientHeight * .9);
+
+            var charWidth  = element.clientWidth  / this.fieldWidth;
+            var charHeight = element.clientHeight / this.fieldHeight;
+
+            for(let iy = this.fieldHeight - 1; iy > this.fieldHeight / 2; iy--) {
+                for(let ix = 0; ix < this.fieldWidth/2; ix += 2) {
+                    //var inv1 = new Invader(element.clientWidth/2, element.clientHeight * .9);
+                    var inv1 = new Invader(ix * charWidth, iy * charHeight);
+                }
+            }
 
             // we need at least one player;  better though if this is on
             // some event.. hmm XXX  also this shuld not be tied to the
             // element, per se... like if there's more than one element
             var p1 = new Player(element.clientWidth/2, element.clientHeight * .1);
             controls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
+            controls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
             controls[68] = p1.moveRight.bind(p1); // 68 = 'd'
+            controls[39] = p1.moveRight.bind(p1); // 39 = right arrow
             controls[87] = p1.shoot.bind(p1);     // 87 = 'w'
 
             window.addEventListener('keyup',   dispatchKeyEvent, false);
@@ -144,7 +166,6 @@ var inv1 = new Invader(element.clientWidth/2, element.clientHeight * .9);
                 for (let obj of gameObjects.values()) {
                     obj.behave(deltaT);
                 }
-                lastUpdate = now;
 
                 // draw stuffs....  this might be over elaborate
                 for (let obj of gameObjects.values()) {
@@ -166,6 +187,8 @@ var inv1 = new Invader(element.clientWidth/2, element.clientHeight * .9);
                     oel.style.bottom = obj.y;
                     oel.innerText = obj.appearance;
                 }
+
+                lastUpdate = now;
             }, this.updateInterval);
         }
     };
