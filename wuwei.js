@@ -20,7 +20,7 @@ var wuwei = function() {
             gameObjects.set(this.id, this);
         }
 
-        behave() {
+        behave(dt) {
             this.x += this.dx;
             this.y += this.dy;
 
@@ -43,15 +43,20 @@ var wuwei = function() {
     class Invader extends GameObj {
         constructor(x, y) {
             super("無", x, y);
+            this.nextMoveMs = 0;
             liveInvaders.set(this.id, this);
         }
 
-        behave() {
-            super.behave();
-            if(this.ch === "無") {
-                this.ch = "爲";
-            } else {
-                this.ch = "無";
+        behave(dt) {
+            super.behave(dt);
+            this.nextMoveMs -= dt;
+            if(this.nextMoveMs <= 0) {
+                if(this.appearance === "無") {
+                    this.appearance = "爲";
+                } else {
+                    this.appearance = "無";
+                }
+                this.nextMoveMs = 500;
             }
         }
     }
@@ -62,7 +67,7 @@ var wuwei = function() {
             players.push(this);
         }
 
-        behave() {
+        behave(dt) {
             if(this.isMoveRight && this.isMoveLeft) { // wtb xor
                 this.dx = 0;
             } else if(this.isMoveRight) {
@@ -73,7 +78,7 @@ var wuwei = function() {
                 this.dx = 0;
             }
 
-            super.behave();
+            super.behave(dt);
 
             if(this.isShooting) {
                 new Missile(this.x, this.y, 0, 1);
@@ -84,20 +89,10 @@ var wuwei = function() {
         // controls:
         moveLeft(start) {
             this.isMoveLeft = start;
-            if(this.isMoveLeft) {
-                console.log("goin left now");
-            } else {
-                console.log("aint goin left now");
-            }
         }
 
         moveRight(start) {
             this.isMoveRight = start;
-            if(this.isMoveRight) {
-                console.log("goin right now");
-            } else {
-                console.log("aint goin right now");
-            }
         }
 
         shoot(start) {
@@ -110,7 +105,6 @@ var wuwei = function() {
     function dispatchKeyEvent(ev) {
         console.log("key event " + ev.type + " " + ev.keyCode);
 
-        
         var func = controls[ev.keyCode];
         if(func) {
             func(ev.type === "keydown");
@@ -118,7 +112,7 @@ var wuwei = function() {
     }
 
     return {
-        fieldWidth  : 40, // chars... hmm
+        fieldWidth  : 40, // chars... runs good!
         fieldHeight : 40,
 
         updateInterval : 60/1000, // 60 frames a second, man
@@ -143,10 +137,14 @@ var inv1 = new Invader(element.clientWidth/2, element.clientHeight * .9);
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
 
+            var lastUpdate = Date.now();
             window.setInterval(function() {
+                var now = Date.now();
+                var deltaT = now - lastUpdate;
                 for (let obj of gameObjects.values()) {
-                    obj.behave();
+                    obj.behave(deltaT);
                 }
+                lastUpdate = now;
 
                 // draw stuffs....  this might be over elaborate
                 for (let obj of gameObjects.values()) {
