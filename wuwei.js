@@ -42,8 +42,7 @@ var wuwei = function() {
 
     class Invader extends GameObj {
         constructor(x, y) {
-            //super("無", x, y);
-            super("x", x, y);
+            super("無", x, y);
             this.nextMoveMs = 0;
             liveInvaders.set(this.id, this);
         }
@@ -54,10 +53,8 @@ var wuwei = function() {
             if(this.nextMoveMs <= 0) {
                 if(this.appearance === "無") {
                     this.appearance = "爲";
-//this.appearance = "o";
                 } else {
                     this.appearance = "無";
-//this.appearance = "x";
                 }
                 this.nextMoveMs = 500;
             }
