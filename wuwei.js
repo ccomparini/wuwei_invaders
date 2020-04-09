@@ -9,7 +9,7 @@ var wuwei = function() {
         constructor(ch, x, y) {
             this.id = nextObjId++;
 
-            this.isDead = false;
+            this.isAlive = true;
 
             this.appearance = ch;
             this.x  = x;
@@ -28,15 +28,38 @@ var wuwei = function() {
 
             // something has to check boundaries; add to collisions?
         }
-
     }
 
     class Missile extends GameObj {
-        constructor(x, y, dx, dy) {
+        constructor(x, y, dx, dy, isVsPlayer) {
             super("|", x, y);
             this.dx = dx;
             this.dy = dy;
+            this.isVsPlayer = isVsPlayer;
             console.log("POW");
+        }
+
+        behave(dt) {
+            super.behave(dt);
+
+            if(this.isVsPlayer) {
+                for(let pNum = 0; pNum < players.length; pNum++) {
+                    if(players[pNum].isAlive) {
+                        console.log("FIXME check if this hit player " + pNum);
+                    }
+                }
+            } else {
+                var myX = this.x /
+                liveInvaders.forEach(
+                    function(invader, id, whatevs) {
+                        // XXX janky - get real bounding boxes
+                        // but, interestingly, that depends on the appearance
+                        // of the objects.. hmm makes me want to check at
+                        // render time
+                        //if(this.x >> 
+                    }
+                );
+            }
         }
     }
 
@@ -113,6 +136,23 @@ var wuwei = function() {
         }
     }
 
+    function zVal(x, y) {
+        var z = 0;
+        // XXX ya know, z curve is stupid for this.
+        // We only care about missiles colliding.  Can just iterate
+        // the missiles vs everything.  if everything is too much,
+        // iterate by columns
+        //for(let bit = 0x8000000; bit > 0xffff; bit >>= 1) {
+        // XXX might not be worth bothering going up this high
+ /*
+        for(let destMask = 0x03; destMask < ; destBit++) {
+            let srcBit = 
+            z |= (x & bit)|((y & bit)>>1);
+        }
+        return z;
+ */
+    }
+
     return {
         fieldWidth  : 40, // chars (or ems)... runs good!
         fieldHeight : 24,
@@ -159,11 +199,19 @@ var wuwei = function() {
 
             var lastUpdate = Date.now();
             window.setInterval(function() {
+                //var colliders = new Map;
+
                 var now = Date.now();
                 var deltaT = now - lastUpdate;
                 for (let obj of gameObjects.values()) {
                     obj.behave(deltaT);
+/*
+                    let z = zVal(obj.x, obj.y);
+                    if(!colliders[z]) colliders[z] = new Array;
+                    colliders[z].push(obj);
+ */
                 }
+
 
                 // draw the game elements.  looks like we don't
                 // have to bother double buffering.  runs good
