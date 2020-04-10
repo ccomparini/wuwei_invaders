@@ -7,7 +7,7 @@ var wuwei = function() {
     var fontSize = 16;
 
     var field; // set by play();  is the canvas on which we play
-    function cleanCtx() { // cache this?
+    function cleanCtx() { // cache this?  can we?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
         ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
@@ -29,8 +29,8 @@ var wuwei = function() {
             // we need a render context to get the bounding box:
             // since all the invaders are the same we probably don't
             // have to measure each but whatevs.  Also, invaders have
-            // more than one char, but whatevs.  maybe move this to
-            // a setAppearance method?
+            // more than one appearance, but whatevs.  maybe move this
+            // to a setAppearance method?  whatevs.
             var ctx = cleanCtx();
             var measurements = ctx.measureText(this.appearance);
             this.minX = -measurements.actualBoundingBoxLeft;
@@ -42,9 +42,8 @@ var wuwei = function() {
         }
 
         behave(dt) {
-            this.x += this.dx;
-            this.y += this.dy;
-            //console.log(this.appearance + " is at " + this.x + "," + this.y);
+            this.x += this.dx * dt;
+            this.y += this.dy * dt;
         }
 
         draw(ctx) {
@@ -52,7 +51,6 @@ var wuwei = function() {
 
             // debug:
             //ctx.strokeRect(this.x + this.minX, this.y + this.minY, this.maxX - this.minX, this.maxY - this.minY);
-
         }
 
         collidesWith(otherObj) { // XXX add dt
@@ -192,9 +190,9 @@ var wuwei = function() {
             if(this.isMoveRight && this.isMoveLeft) { // wtb xor
                 this.dx = 0;
             } else if(this.isMoveRight) {
-                this.dx = 1;
+                this.dx = 0.2;
             } else if(this.isMoveLeft) {
-                this.dx = -1;
+                this.dx = -0.2;
             } else {
                 this.dx = 0;
             }
@@ -202,7 +200,7 @@ var wuwei = function() {
             super.behave(dt);
 
             if(this.isShooting) {
-                new Missile(this.x, this.y, 0, -1, liveInvaders);
+                new Missile(this.x, this.y, 0, -0.2, liveInvaders);
                 this.isShooting = false;
             }
         }
