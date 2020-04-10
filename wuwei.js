@@ -5,6 +5,14 @@ var wuwei = function() {
     var liveInvaders = new Map;
     var players  = new Map;
     var fontSize = 16;
+    var fieldWidth  = 40; // XXX probably convert to pixels
+    var fieldHeight = 24;
+    // theoretically, updateInterval is integer ms, but
+    // it seems that if I give it a float it dtrt and
+    // actually updates more smoothly (on chrome, anyway).
+    // go figure/revisit:
+    var updateInterval = 60/1000;
+
 
     var field; // set by play();  is the canvas on which we play
     function cleanCtx() { // cache this?  can we?
@@ -26,6 +34,8 @@ var wuwei = function() {
             this.dx = 0;
             this.dy = 0;
 
+            //this.debugBounding = true;
+
             // we need a render context to get the bounding box:
             // since all the invaders are the same we probably don't
             // have to measure each but whatevs.  Also, invaders have
@@ -44,13 +54,23 @@ var wuwei = function() {
         behave(dt, frameNum) {
             this.x += this.dx * dt;
             this.y += this.dy * dt;
+
+            // check if we went off the top or bottom of the field
+            // XXX
         }
 
         draw(ctx) {
             ctx.fillText(this.appearance, this.x, this.y);
 
-            // debug:
-            //ctx.strokeRect(this.x + this.minX, this.y + this.minY, this.maxX - this.minX, this.maxY - this.minY);
+            if(this.debugBounding) {
+                var oldFill = ctx.fillStyle;
+                ctx.fillStyle = 'green';
+                ctx.strokeRect(
+                    this.x + this.minX, this.y + this.minY,
+                    this.maxX - this.minX, this.maxY - this.minY
+                );
+                ctx.fillStyle = oldFill;
+            }
         }
 
         collidesWith(otherObj) { // XXX add dt
@@ -171,7 +191,6 @@ var wuwei = function() {
 
         learnAboutMinion(minion, frameNum) {
             if(frameNum > this.lastReportedFrame) {
-console.log("resetting maxes on " + frameNum);
                 this.maxInvaderX = 0;
                 this.minInvaderX = Infinity;
                 this.lastReportedFrame = frameNum;
@@ -314,21 +333,15 @@ console.log("resetting maxes on " + frameNum);
         console.log("key event " + ev.type + " " + ev.keyCode);
 
         var func = controls[ev.keyCode];
-        if(func) {
-            func(ev.type === "keydown");
-        }
+        if(func) func(ev.type === "keydown");
     }
 
     return {
-        fieldWidth  : 40, // chars (or ems)... runs good!
-        fieldHeight : 24,
-
-        updateInterval : 60/1000, // 60 frames a second, man
 
         'play': function(container) {
             container.style.position = "relative";
-            container.style.width  = this.fieldWidth + 'em';
-            container.style.height = this.fieldHeight + 'em';
+            container.style.width  = fieldWidth + 'em';
+            container.style.height = fieldHeight + 'em';
             container.style.backgroundColor = '#eeeeee';
 
 // XXX make this a function or something
@@ -351,6 +364,7 @@ console.log("resetting maxes on " + frameNum);
             controls[68] = p1.moveRight.bind(p1); // 68 = 'd'
             controls[39] = p1.moveRight.bind(p1); // 39 = right arrow
             controls[87] = p1.shoot.bind(p1);     // 87 = 'w'
+            controls[32] = p1.shoot.bind(p1);     // 32 = ' '
 
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
@@ -377,7 +391,7 @@ console.log("resetting maxes on " + frameNum);
 
                 lastUpdate = now;
                 frameNum++;
-            }, this.updateInterval);
+            }, updateInterval);
         }
     };
 }();
