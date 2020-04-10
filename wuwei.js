@@ -120,7 +120,11 @@ var wuwei = function() {
 
     class Missile extends GameObj {
         constructor(x, y, dx, dy, vsGroup) {
-            super("↑", x, y);
+            if(dy > 0)
+                super("↓", x, y);
+            else
+                super("↑", x, y);
+
             this.dx = dx;
             this.dy = dy;
             this.vsGroup = vsGroup;
@@ -139,12 +143,12 @@ var wuwei = function() {
 
         draw(ctx) {
             super.draw(ctx);
-
-            // drawing the rect here was debug but I kinda like it:
-            var oldFill = ctx.fillStyle;
-            ctx.fillStyle = this.color || "red";
-            ctx.fillRect(this.x-2, this.y-2, 5, 5);
-            ctx.fillStyle = oldFill;
+            if(this.debugBounding) {
+                var oldFill = ctx.fillStyle;
+                ctx.fillStyle = this.color || "red";
+                ctx.fillRect(this.x-2, this.y-2, 5, 5);
+                ctx.fillStyle = oldFill;
+            }
         }
 
         collidesWith(otherObj) { // XXX add dt so that we can check
