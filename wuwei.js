@@ -3,7 +3,16 @@ var wuwei = function() {
     var nextObjId = 1;
     var gameObjects = new Map;
     var liveInvaders = new Map;
-    var players  = [];
+    var players  = new Map;
+    var fontSize = 16;
+
+    var field; // set by play();  is the canvas on which we play
+    function cleanCtx() {
+        var ctx = field.getContext('2d');
+        ctx.textAlign = "center";
+        ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
+        return ctx;
+    }
 
     class GameObj {
         constructor(ch, x, y) {
@@ -17,49 +26,97 @@ var wuwei = function() {
             this.dx = 0;
             this.dy = 0;
 
+            // we need a render context to get the bounding box:
+            // since all the invaders are the same we probably don't
+            // have to measure each but whatevs.  Also, invaders have
+            // more than one char, but whatevs.  maybe move this to
+            // a setAppearance method?
+            var ctx = cleanCtx();
+            var measurements = ctx.measureText(this.appearance);
+            this.minX = -measurements.actualBoundingBoxLeft;
+            this.maxX =  measurements.actualBoundingBoxRight;
+            this.minY = -measurements.actualBoundingBoxAscent;
+            this.maxY =  measurements.actualBoundingBoxDescent;
+
             gameObjects.set(this.id, this);
         }
 
         behave(dt) {
             this.x += this.dx;
             this.y += this.dy;
-
             //console.log(this.appearance + " is at " + this.x + "," + this.y);
-
-            // something has to check boundaries; add to collisions?
         }
+
+        draw(ctx) {
+            ctx.fillText(this.appearance, this.x, this.y);
+
+            // debug:
+            //ctx.strokeRect(this.x + this.minX, this.y + this.minY, this.maxX - this.minX, this.maxY - this.minY);
+
+        }
+
+        collidesWith(otherObj) { // XXX add dt
+            // base objects don't collide, for now, let's say
+            // XXX actually better would be to implement precise
+            // collisions here, and let callers/subclasses
+            // decide if they even need to call this based on
+            // other culling techniques
+            return null;
+        }
+
+        destroy() {
+            gameObjects.delete(this.id);
+        }
+
     }
 
     class Missile extends GameObj {
-        constructor(x, y, dx, dy, isVsPlayer) {
-            super("|", x, y);
+        constructor(x, y, dx, dy, vsGroup) {
+            super("↑", x, y);
             this.dx = dx;
             this.dy = dy;
-            this.isVsPlayer = isVsPlayer;
-            console.log("POW");
+            this.vsGroup = vsGroup;
         }
 
         behave(dt) {
             super.behave(dt);
 
-            if(this.isVsPlayer) {
-                for(let pNum = 0; pNum < players.length; pNum++) {
-                    if(players[pNum].isAlive) {
-                        console.log("FIXME check if this hit player " + pNum);
+            for(let target of this.vsGroup.values()) {
+                if(this.collidesWith(target)) {
+                    target.destroy();
+                    this.destroy();
+                }
+            }
+        }
+
+        draw(ctx) {
+            super.draw(ctx);
+            var oldFill = ctx.fillStyle;
+            ctx.fillStyle = this.color || "red";
+            //ctx.fillRect(this.x, this.y, 1, 1);
+            ctx.fillRect(this.x-2, this.y-2, 5, 5);
+            ctx.fillStyle = oldFill;
+        }
+
+        collidesWith(otherObj) { // XXX add dt so that we can check
+            // (we're defining missiles as thin, so the x checks are just
+            // vs the missle x.  i.e. cheating to make it easier)
+            var hit = null;
+            if(otherObj.x + otherObj.minX <= this.x) {
+                if(otherObj.x + otherObj.maxX >= this.x) {
+                    // we're within the left/right boundaries.
+                    // check y:
+                    // XXX take into account the length.  Or, maybe just
+                    // the x,y is the pointy part?  anyway:
+                    if(otherObj.y + otherObj.maxY >= this.y) {
+                        if(otherObj.y + otherObj.minY <= this.y) {
+                            console.log("A palpable hit!");
+                            hit = otherObj;
+                        }
                     }
                 }
-            } else {
-                var myX = this.x /
-                liveInvaders.forEach(
-                    function(invader, id, whatevs) {
-                        // XXX janky - get real bounding boxes
-                        // but, interestingly, that depends on the appearance
-                        // of the objects.. hmm makes me want to check at
-                        // render time
-                        //if(this.x >> 
-                    }
-                );
             }
+            return hit;
         }
     }
 
@@ -82,12 +139,17 @@ var wuwei = function() {
                 this.nextMoveMs = 500;
             }
         }
+
+        destroy() {
+            super.destroy();
+            liveInvaders.delete(this.id);
+        }
     }
 
     class Player extends GameObj {
         constructor(x, y) {
             super("🙏", x, y);
-            players.push(this);
+            players.set(this.id, this);
         }
 
         behave(dt) {
@@ -103,10 +165,8 @@ var wuwei = function() {
 
             super.behave(dt);
 
-            //console.log(this.x);
-
             if(this.isShooting) {
-                new Missile(this.x, this.y, 0, -1);
+                new Missile(this.x, this.y, 0, -1, liveInvaders);
                 this.isShooting = false;
             }
         }
@@ -136,23 +196,6 @@ var wuwei = function() {
         }
     }
 
-    function zVal(x, y) {
-        var z = 0;
-        // XXX ya know, z curve is stupid for this.
-        // We only care about missiles colliding.  Can just iterate
-        // the missiles vs everything.  if everything is too much,
-        // iterate by columns
-        //for(let bit = 0x8000000; bit > 0xffff; bit >>= 1) {
-        // XXX might not be worth bothering going up this high
- /*
-        for(let destMask = 0x03; destMask < ; destBit++) {
-            let srcBit = 
-            z |= (x & bit)|((y & bit)>>1);
-        }
-        return z;
- */
-    }
-
     return {
         fieldWidth  : 40, // chars (or ems)... runs good!
         fieldHeight : 24,
@@ -165,15 +208,15 @@ var wuwei = function() {
             container.style.height = this.fieldHeight + 'em';
             container.style.backgroundColor = '#eeeeee';
 
-            var field = document.createElement("canvas");
+// XXX make this a function or something
+            field = document.createElement("canvas");
             container.appendChild(field);
             field.style.width ='100%';
             field.style.height='100%';
             // ...then set the internal size to match
             field.width  = field.offsetWidth;
             field.height = field.offsetHeight;
-
-            var fontSize = parseFloat(window.getComputedStyle(container, null).getPropertyValue('font-size'));
+// end XXX make this a function or something
 
             var charWidth  = container.clientWidth  / this.fieldWidth;
             var charHeight = container.clientHeight / this.fieldHeight;
@@ -205,22 +248,15 @@ var wuwei = function() {
                 var deltaT = now - lastUpdate;
                 for (let obj of gameObjects.values()) {
                     obj.behave(deltaT);
-/*
-                    let z = zVal(obj.x, obj.y);
-                    if(!colliders[z]) colliders[z] = new Array;
-                    colliders[z].push(obj);
- */
                 }
-
 
                 // draw the game elements.  looks like we don't
                 // have to bother double buffering.  runs good
                 // as-is, on my machine, anyway!
-                var ctx = field.getContext('2d');
+                var ctx = cleanCtx();
                 ctx.clearRect(0, 0, field.width, field.height);
-                ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
                 for (let obj of gameObjects.values()) {
-                    ctx.fillText(obj.appearance, obj.x, obj.y);
+                    obj.draw(ctx);
                 }
 
                 lastUpdate = now;
