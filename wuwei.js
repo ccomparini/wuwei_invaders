@@ -121,6 +121,8 @@ var wuwei = function() {
     }
 
     class Invader extends GameObj {
+        static minX = 0;
+        static maxX = 0;  // XXX you were going to use these to figure out when the things should turn/descend
         constructor(x, y) {
             super("無", x, y);
             this.nextMoveMs = 0;
@@ -141,8 +143,42 @@ var wuwei = function() {
         }
 
         destroy() {
+            new Boom(this.x, this.y);
             super.destroy();
             liveInvaders.delete(this.id);
+        }
+    }
+
+    class Boom extends GameObj {
+        constructor(x, y) {
+            super("⬝", x, y);
+            this.nextMoveMs = 0;
+        }
+
+        behave(dt) {
+            this.nextMoveMs -= dt;
+            if(this.nextMoveMs <= 0) {
+                this.nextMoveMs = 100;
+                if(this.appearance === "⬝") {
+                    this.appearance = "⭑";
+                } else if(this.appearance === "⭑") {
+                    this.appearance = "⭓";
+                } else if(this.appearance === "⭓") {
+                    this.appearance = "⬤";
+                } else if(this.appearance === "⬤") {
+                    this.appearance = "⤫";
+                } else if(this.appearance === "⤫") {
+                    this.appearance = "⟳";
+                } else if(this.appearance === "⟳") {
+                    this.appearance = "⥁";
+                } else if(this.appearance === "⥁") {
+                    this.appearance = "⍟";
+                } else if(this.appearance === "⍟") {
+                    this.destroy();
+                } else {
+                    this.appearance = "⬝";
+                }
+            }
         }
     }
 
