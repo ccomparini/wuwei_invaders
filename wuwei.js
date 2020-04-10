@@ -143,7 +143,6 @@ var wuwei = function() {
             // drawing the rect here was debug but I kinda like it:
             var oldFill = ctx.fillStyle;
             ctx.fillStyle = this.color || "red";
-            //ctx.fillRect(this.x, this.y, 1, 1);
             ctx.fillRect(this.x-2, this.y-2, 5, 5);
             ctx.fillStyle = oldFill;
         }
@@ -155,9 +154,8 @@ var wuwei = function() {
             if(otherObj.x + otherObj.minX <= this.x) {
                 if(otherObj.x + otherObj.maxX >= this.x) {
                     // we're within the left/right boundaries.
-                    // check y:
-                    // XXX take into account the length.  Or, maybe just
-                    // the x,y is the pointy part?  anyway:
+                    // actualy just checking x,y appears to be sufficient,
+                    // at least if you have a good framerate!  cheating. XXX fix
                     if(otherObj.y + otherObj.maxY >= this.y) {
                         if(otherObj.y + otherObj.minY <= this.y) {
                             console.log("A palpable hit!");
@@ -199,7 +197,6 @@ var wuwei = function() {
 
         behave(dt, frameNum) {
 
-            // FIXME get rid of random constants etc
             if(invadersWon) {
                 // invaders stand and gloat:
                 this.changeXThus = 0;
@@ -223,14 +220,21 @@ var wuwei = function() {
             }
 
             if(liveInvaders.size === 0) {
-                // spawn minions.  XXX make this a method or something.
-                var charWidth  = field.clientWidth  / 40; // FIXME
-                var charHeight = field.clientHeight / 24; // FIXME
-                for(let iy = 1; iy < 5; iy++) {
-                    //for(let ix = 1; ix < fieldWidth; ix += 2) {
-                    for(let ix = 1; ix < 38; ix += 2) {  // FIXME
-                        var inv1 = new Invader(ix * charWidth, iy * charHeight, this);
-                    }
+                this.spawnMinions();
+            }
+        }
+
+        spawnMinions() {
+            // spawn minions. 
+            var charWidth  = field.clientWidth  / fieldWidthChars;
+            var charHeight = field.clientHeight / fieldHeightChars;
+            for(let iy = 1; iy < 5; iy++) {
+                // each row basically fills the field with minions,
+                // space out one "char width", with a little space
+                // on the left and slightly more on the right so they
+                // can move
+                for(let ix = 1; ix < fieldWidthChars - 2; ix += 2) {
+                    new Invader(ix * charWidth, iy * charHeight, this);
                 }
             }
         }
