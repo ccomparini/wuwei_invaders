@@ -185,7 +185,7 @@ var wuwei = function() {
 
     class HiveMind extends GameObj {
         constructor(x, y) {
-            super('你所有的基地都屬於我們', x, y);
+            super('先生们，您所有的基地都属于我们', x, y);
             this.minInvaderX = Infinity;
             this.maxInvaderX = 0;
             this.lastReportedFrame = -1;
