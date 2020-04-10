@@ -7,7 +7,7 @@ var wuwei = function() {
     var fontSize = 16;
 
     var field; // set by play();  is the canvas on which we play
-    function cleanCtx() {
+    function cleanCtx() { // cache this?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
         ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
@@ -222,15 +222,14 @@ var wuwei = function() {
             var charHeight = container.clientHeight / this.fieldHeight;
 
             for(let iy = 1; iy < 5; iy++) {
-                for(let ix = 0; ix < this.fieldWidth; ix += 2) {
+                for(let ix = 1; ix < this.fieldWidth; ix += 2) {
                     var inv1 = new Invader(ix * charWidth, iy * charHeight);
                 }
             }
 
             // we need at least one player;  better though if this is on
-            // some event.. hmm XXX  also this shuld not be tied to the
-            // element, per se... like if there's more than one element
-            var p1 = new Player(container.clientWidth/2, container.clientHeight * .9);
+            // some event..
+            var p1 = new Player(field.clientWidth/2, field.clientHeight * .9);
             controls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
             controls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
             controls[68] = p1.moveRight.bind(p1); // 68 = 'd'
