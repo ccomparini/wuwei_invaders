@@ -5,19 +5,24 @@ var wuwei = function() {
     var liveInvaders = new Map;
     var players  = new Map;
     var fontSize = 16;
-    var fieldWidth  = 40; // XXX probably convert to pixels
-    var fieldHeight = 24;
+    // empirical, from old:  width: 640 height: 384
+    // XXX make this settable from html (or whatever) controls
+    var fieldWidthChars  = 40;
+    var fieldHeightChars = 24;
+
+    var invadersWon = false;
+
     // theoretically, updateInterval is integer ms, but
     // it seems that if I give it a float it dtrt and
     // actually updates more smoothly (on chrome, anyway).
-    // go figure/revisit:
+    // this might be because I chose 60/sec.  go figure/revisit:
     var updateInterval = 60/1000;
-
 
     var field; // set by play();  is the canvas on which we play
     function cleanCtx() { // cache this?  can we?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
+        // everything in js is a fragile hack:
         ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
         return ctx;
     }
@@ -52,11 +57,36 @@ var wuwei = function() {
         }
 
         behave(dt, frameNum) {
+            // check if we went off the top or bottom of the field
+            if(this.y + this.minY <= 0) {
+                this.hitSky(dt);
+            } else if(this.y + this.maxY > field.clientHeight) {
+                this.hitGround(dt);
+            }
+
+            // sides, too...
+            if(this.x + this.minX <= 0) {
+                this.hitSide(dt);
+            } else if(this.x + this.maxX > field.clientWidth) {
+                this.hitSide(dt);
+            }
+
+            // _then_ move.  that gives things time to
+            // bounce on walls or whatever.
             this.x += this.dx * dt;
             this.y += this.dy * dt;
+        }
 
-            // check if we went off the top or bottom of the field
-            // XXX
+        hitSky(dt) {
+            this.destroy();
+        }
+
+        hitGround(dt) {
+            this.destroy();
+        }
+
+        hitSide(dt) {
+            this.destroy();
         }
 
         draw(ctx) {
@@ -141,13 +171,23 @@ var wuwei = function() {
 
         destroy() {
             super.destroy();
-            new Boom(this.x, this.y);
+            if(!this.destroyQuietly) new Boom(this.x, this.y);
+        }
+
+        hitSky(dt) {
+            this.destroyQuietly = true;
+            super.hitSide();
+        }
+
+        hitSide(dt) {
+            this.destroyQuietly = true;
+            super.hitSide();
         }
     }
 
     class HiveMind extends GameObj {
         constructor(x, y) {
-            super('', x, y);
+            super('你所有的基地都屬於我們', x, y);
             this.minInvaderX = Infinity;
             this.maxInvaderX = 0;
             this.lastReportedFrame = -1;
@@ -158,8 +198,18 @@ var wuwei = function() {
         }
 
         behave(dt, frameNum) {
-            // FIXME random constants etc
-            if(this.changeXThus + this.maxInvaderX > field.width - 10) {
+
+            // FIXME get rid of random constants etc
+            if(invadersWon) {
+                // invaders stand and gloat:
+                this.changeXThus = 0;
+                this.changeYThus = 0;
+
+                // we fly in and gloat as well:
+                this.x = field.clientWidth  / 2;
+                this.y = field.clientHeight / 2;
+                
+            } else if(this.changeXThus + this.maxInvaderX > field.width - 10) {
                 this.changeXThus = -this.changeXThus;
                 this.changeYThus = 16;
             } else if(this.changeXThus + this.minInvaderX < 10) {
@@ -174,10 +224,6 @@ var wuwei = function() {
 
             if(liveInvaders.size === 0) {
                 // spawn minions.  XXX make this a method or something.
-/*
-                var charWidth  = field.clientWidth  / this.fieldWidth;
-                var charHeight = field.clientHeight / this.fieldHeight;
-*/
                 var charWidth  = field.clientWidth  / 40; // FIXME
                 var charHeight = field.clientHeight / 24; // FIXME
                 for(let iy = 1; iy < 5; iy++) {
@@ -237,7 +283,7 @@ var wuwei = function() {
             // should set agressiveness. anywayzzz:
             // XXX also need to scale to time!  oh have a "next shoot"
             // attr.  should be fun.
-            if(Math.random() < 0.0003) {
+            if(!invadersWon && players.size && Math.random() < 0.0003) {
                 // XXX need missile speed constant.  Also some
                 // rand to the speed could be amusing!
                 new Missile(this.x, this.y, 0, 0.2, players);
@@ -247,6 +293,10 @@ var wuwei = function() {
         destroy() {
             super.destroy();
             liveInvaders.delete(this.id);
+        }
+
+        hitGround() {
+            invadersWon = true;
         }
     }
 
@@ -313,6 +363,15 @@ var wuwei = function() {
             players.delete(this.id);
         }
 
+        hitSide(dt) {
+            this.dx = 0;
+            if(this.x > field.clientWidth / 2) {
+                this.x  = field.clientWidth - this.maxX - 1;
+            } else {
+                this.x  = -this.minX + 1;
+            }
+        }
+
         // controls:
         moveLeft(start) {
             this.isMoveLeft = start;
@@ -340,8 +399,8 @@ var wuwei = function() {
 
         'play': function(container) {
             container.style.position = "relative";
-            container.style.width  = fieldWidth + 'em';
-            container.style.height = fieldHeight + 'em';
+            container.style.width  = fieldWidthChars + 'em';
+            container.style.height = fieldHeightChars + 'em';
             container.style.backgroundColor = '#eeeeee';
 
 // XXX make this a function or something
