@@ -41,7 +41,7 @@ var wuwei = function() {
             gameObjects.set(this.id, this);
         }
 
-        behave(dt) {
+        behave(dt, frameNum) {
             this.x += this.dx * dt;
             this.y += this.dy * dt;
         }
@@ -76,8 +76,8 @@ var wuwei = function() {
             this.vsGroup = vsGroup;
         }
 
-        behave(dt) {
-            super.behave(dt);
+        behave(dt, frameNum) {
+            super.behave(dt, frameNum);
 
             for(let target of this.vsGroup.values()) {
                 if(this.collidesWith(target)) {
@@ -89,6 +89,8 @@ var wuwei = function() {
 
         draw(ctx) {
             super.draw(ctx);
+
+            // drawing the rect here was debug but I kinda like it:
             var oldFill = ctx.fillStyle;
             ctx.fillStyle = this.color || "red";
             //ctx.fillRect(this.x, this.y, 1, 1);
@@ -116,32 +118,114 @@ var wuwei = function() {
             }
             return hit;
         }
+
+        destroy() {
+            super.destroy();
+            new Boom(this.x, this.y);
+        }
+    }
+
+    class HiveMind extends GameObj {
+        constructor(x, y) {
+            super('', x, y);
+            this.minInvaderX = Infinity;
+            this.maxInvaderX = 0;
+            this.lastReportedFrame = -1;
+            this.lastDescentOrderFrame = Infinity;
+            this.changeXThus = 10;
+            this.changeYThus = 0;
+
+        }
+
+        behave(dt, frameNum) {
+            // FIXME random constants etc
+            if(this.changeXThus + this.maxInvaderX > field.width - 10) {
+                this.changeXThus = -this.changeXThus;
+                this.changeYThus = 16;
+            } else if(this.changeXThus + this.minInvaderX < 10) {
+                this.changeXThus = -this.changeXThus;
+                this.changeYThus = 16;
+            }
+
+            if(frameNum > this.lastDescentOrderFrame) {
+                this.changeYThus = 0;
+                this.lastDescentOrderFrame = Infinity;
+            }
+
+            if(liveInvaders.size === 0) {
+                // spawn minions.  XXX make this a method or something.
+/*
+                var charWidth  = field.clientWidth  / this.fieldWidth;
+                var charHeight = field.clientHeight / this.fieldHeight;
+*/
+                var charWidth  = field.clientWidth  / 40; // FIXME
+                var charHeight = field.clientHeight / 24; // FIXME
+                for(let iy = 1; iy < 5; iy++) {
+                    //for(let ix = 1; ix < fieldWidth; ix += 2) {
+                    for(let ix = 1; ix < 38; ix += 2) {  // FIXME
+                        var inv1 = new Invader(ix * charWidth, iy * charHeight, this);
+                    }
+                }
+            }
+        }
+
+        learnAboutMinion(minion, frameNum) {
+            if(frameNum > this.lastReportedFrame) {
+console.log("resetting maxes on " + frameNum);
+                this.maxInvaderX = 0;
+                this.minInvaderX = Infinity;
+                this.lastReportedFrame = frameNum;
+            }
+
+            if(this.changeYThus) {
+                this.lastDescentOrderFrame = frameNum;
+            }
+
+            if(minion.x > this.maxInvaderX)
+                this.maxInvaderX = minion.x;
+
+            if(minion.x < this.minInvaderX)
+                this.minInvaderX = minion.x;
+        }
     }
 
     class Invader extends GameObj {
-        static minX = 0;
-        static maxX = 0;  // XXX you were going to use these to figure out when the things should turn/descend
-        constructor(x, y) {
+        constructor(x, y, master) {
             super("無", x, y);
+            this.master = master;
             this.nextMoveMs = 0;
             liveInvaders.set(this.id, this);
         }
 
-        behave(dt) {
-            super.behave(dt);
+        behave(dt, frameNum) {
             this.nextMoveMs -= dt;
             if(this.nextMoveMs <= 0) {
                 if(this.appearance === "無") {
                     this.appearance = "爲";
                 } else {
                     this.appearance = "無";
+                    this.x += this.master.changeXThus;
+                    this.y += this.master.changeYThus;
+                    this.master.learnAboutMinion(this, frameNum);
                 }
+
                 this.nextMoveMs = 500;
+            }
+
+            super.behave(dt, frameNum); // mostly politeness
+
+            // XXX more arbitrary constants.  also maybe hive mind
+            // should set agressiveness. anywayzzz:
+            // XXX also need to scale to time!  oh have a "next shoot"
+            // attr.  should be fun.
+            if(Math.random() < 0.0003) {
+                // XXX need missile speed constant.  Also some
+                // rand to the speed could be amusing!
+                new Missile(this.x, this.y, 0, 0.2, players);
             }
         }
 
         destroy() {
-            new Boom(this.x, this.y);
             super.destroy();
             liveInvaders.delete(this.id);
         }
@@ -153,7 +237,7 @@ var wuwei = function() {
             this.nextMoveMs = 0;
         }
 
-        behave(dt) {
+        behave(dt, frameNum) {
             this.nextMoveMs -= dt;
             if(this.nextMoveMs <= 0) {
                 this.nextMoveMs = 100;
@@ -186,7 +270,7 @@ var wuwei = function() {
             players.set(this.id, this);
         }
 
-        behave(dt) {
+        behave(dt, frameNum) {
             if(this.isMoveRight && this.isMoveLeft) { // wtb xor
                 this.dx = 0;
             } else if(this.isMoveRight) {
@@ -197,12 +281,17 @@ var wuwei = function() {
                 this.dx = 0;
             }
 
-            super.behave(dt);
+            super.behave(dt, frameNum);
 
             if(this.isShooting) {
                 new Missile(this.x, this.y, 0, -0.2, liveInvaders);
                 this.isShooting = false;
             }
+        }
+
+        destroy() {
+            super.destroy();
+            players.delete(this.id);
         }
 
         // controls:
@@ -252,14 +341,7 @@ var wuwei = function() {
             field.height = field.offsetHeight;
 // end XXX make this a function or something
 
-            var charWidth  = container.clientWidth  / this.fieldWidth;
-            var charHeight = container.clientHeight / this.fieldHeight;
-
-            for(let iy = 1; iy < 5; iy++) {
-                for(let ix = 1; ix < this.fieldWidth; ix += 2) {
-                    var inv1 = new Invader(ix * charWidth, iy * charHeight);
-                }
-            }
+            var hiveMind = new HiveMind(0, -1000); 
 
             // we need at least one player;  better though if this is on
             // some event..
@@ -273,14 +355,15 @@ var wuwei = function() {
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
 
-            var lastUpdate = Date.now();
+            let lastUpdate = Date.now();
+            let frameNum = 0;
             window.setInterval(function() {
                 //var colliders = new Map;
 
                 var now = Date.now();
                 var deltaT = now - lastUpdate;
                 for (let obj of gameObjects.values()) {
-                    obj.behave(deltaT);
+                    obj.behave(deltaT, frameNum);
                 }
 
                 // draw the game elements.  looks like we don't
@@ -293,6 +376,7 @@ var wuwei = function() {
                 }
 
                 lastUpdate = now;
+                frameNum++;
             }, this.updateInterval);
         }
     };
