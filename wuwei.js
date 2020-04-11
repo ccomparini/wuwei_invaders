@@ -24,8 +24,9 @@ var wuwei = function() {
         field = document.createElement("canvas");
         container.appendChild(field);
 
-        field.style.width ='100%';
-        field.style.height='100%';
+        field.style.cursor = "none";
+        field.style.width  = "100%";
+        field.style.height = "100%";
 
         // ...then set the internal size to match
         field.width  = field.offsetWidth;
