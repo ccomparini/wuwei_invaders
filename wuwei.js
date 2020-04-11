@@ -4,8 +4,8 @@ var wuwei = function() {
     var gameObjects = new Map;
     var liveInvaders = new Map;
     var players  = new Map;
-    var fontSize = 16;
-    // empirical, from old:  width: 640 height: 384
+    var fontSize = 16; // 'cuz this looks good to me
+
     // XXX make this settable from html (or whatever) controls
     var fieldWidthChars  = 40;
     var fieldHeightChars = 24;
@@ -18,7 +18,7 @@ var wuwei = function() {
     // this might be because I chose 60/sec.  go figure/revisit:
     var updateInterval = 60/1000;
 
-    var field; // set by play();  is the canvas on which we play
+    var field; // set by play();  is the html canvas on which we play
     function cleanCtx() { // cache this?  can we?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
@@ -103,7 +103,7 @@ var wuwei = function() {
             }
         }
 
-        collidesWith(otherObj) { // XXX add dt
+        collidesWith(otherObj, dt) {
             // base objects don't collide, for now, let's say
             // XXX actually better would be to implement precise
             // collisions here, and let callers/subclasses
@@ -134,7 +134,7 @@ var wuwei = function() {
             super.behave(dt, frameNum);
 
             for(let target of this.vsGroup.values()) {
-                if(this.collidesWith(target)) {
+                if(this.collidesWith(target, dt)) {
                     target.destroy();
                     this.destroy();
                 }
@@ -151,7 +151,7 @@ var wuwei = function() {
             }
         }
 
-        collidesWith(otherObj) { // XXX add dt so that we can check
+        collidesWith(otherObj, dt) {
             // (we're defining missiles as thin, so the x checks are just
             // vs the missle x.  i.e. cheating to make it easier)
             var hit = null;
@@ -159,7 +159,8 @@ var wuwei = function() {
                 if(otherObj.x + otherObj.maxX >= this.x) {
                     // we're within the left/right boundaries.
                     // actualy just checking x,y appears to be sufficient,
-                    // at least if you have a good framerate!  cheating. XXX fix
+                    // at least if you have a good framerate!  cheating.
+                    // XXX fix/take into account dt
                     if(otherObj.y + otherObj.maxY >= this.y) {
                         if(otherObj.y + otherObj.minY <= this.y) {
                             console.log("A palpable hit!");
@@ -292,6 +293,8 @@ var wuwei = function() {
             // XXX also need to scale to time!  oh have a "next shoot"
             // attr.  should be fun.
             if(!invadersWon && players.size && Math.random() < 0.0003) {
+                // ok so dt is usually ~ 4 ms
+                // so let's say 
                 // XXX need missile speed constant.  Also some
                 // rand to the speed could be amusing!
                 new Missile(this.x, this.y, 0, 0.2, players);
