@@ -19,6 +19,21 @@ var wuwei = function() {
     var updateInterval = 60/1000;
 
     var field; // set by play();  is the html canvas on which we play
+
+    function createField(container) {
+        field = document.createElement("canvas");
+        container.appendChild(field);
+
+        field.style.width ='100%';
+        field.style.height='100%';
+
+        // ...then set the internal size to match
+        field.width  = field.offsetWidth;
+        field.height = field.offsetHeight;
+
+        return field;
+    }
+
     function cleanCtx() { // cache this?  can we?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
@@ -414,15 +429,7 @@ var wuwei = function() {
             container.style.height = fieldHeightChars + 'em';
             container.style.backgroundColor = '#eeeeee';
 
-// XXX make this a function or something
-            field = document.createElement("canvas");
-            container.appendChild(field);
-            field.style.width ='100%';
-            field.style.height='100%';
-            // ...then set the internal size to match
-            field.width  = field.offsetWidth;
-            field.height = field.offsetHeight;
-// end XXX make this a function or something
+            field = createField(container);
 
             var hiveMind = new HiveMind(0, -1000); 
 
