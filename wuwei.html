@@ -1,14 +1,23 @@
 <html>
-
   <body>
-    <div style="font-size: xxx-large; text-align: center;">
-	無爲
-    </div>
     <div style="text-align: center">
-      <div id="playfield" style="display: inline-block">
+      <div style="font-size: xxx-large;">
+	無爲
       </div>
+      <span id="scoreboard">
+      </span>
+      <span id="playfield" style="display: inline-block">
+      </span>
+      <span id="settings">
+          maybe settings go here yo
+      </span>
     </div>
   </body>
   <script src="wuwei.js"></script>
-  <script>wuwei.play(document.getElementById("playfield"));</script>
+  <script>
+    wuwei.play({
+      playfield:  document.getElementById("playfield"),
+      //scoreboard: document.getElementById("scoreboard"),
+    });
+  </script>
 </html>

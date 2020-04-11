@@ -21,6 +21,11 @@ var wuwei = function() {
     var field; // set by play();  is the html canvas on which we play
 
     function createField(container) {
+        container.style.position = "relative";
+        container.style.width  = fieldWidthChars + 'em';
+        container.style.height = fieldHeightChars + 'em';
+        container.style.backgroundColor = '#eeeeee';
+
         field = document.createElement("canvas");
         container.appendChild(field);
 
@@ -424,14 +429,12 @@ var wuwei = function() {
 
     return {
 
-        'play': function(container) {
-            container.style.position = "relative";
-            container.style.width  = fieldWidthChars + 'em';
-            container.style.height = fieldHeightChars + 'em';
-            container.style.backgroundColor = '#eeeeee';
+        'play': function(elements) {
+            field = createField(elements.playfield);
 
-            field = createField(container);
-
+            // hiveMind creates and commands the invaders.
+            // it stays off screen on planet x until the
+            // invaders win.
             var hiveMind = new HiveMind(0, -1000); 
 
             // we need at least one player;  better though if this is on
