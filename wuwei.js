@@ -209,6 +209,9 @@ var wuwei = function() {
         }
     }
 
+    const invaderXStep   = 10;
+    const invaderYStep   = 16;
+    const invaderXMargin = 10;
     class HiveMind extends GameObj {
         constructor(x, y) {
             super('先生们，您所有的基地都属于我们', x, y);
@@ -216,7 +219,7 @@ var wuwei = function() {
             this.maxInvaderX = 0;
             this.lastReportedFrame = -1;
             this.lastDescentOrderFrame = Infinity;
-            this.changeXThus = 10;
+            this.changeXThus = invaderXStep;
             this.changeYThus = 0;
 
         }
@@ -232,12 +235,12 @@ var wuwei = function() {
                 this.x = field.clientWidth  / 2;
                 this.y = field.clientHeight / 2;
                 
-            } else if(this.changeXThus + this.maxInvaderX > field.width - 10) {
+            } else if(this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) {
                 this.changeXThus = -this.changeXThus;
-                this.changeYThus = 16;
-            } else if(this.changeXThus + this.minInvaderX < 10) {
+                this.changeYThus = invaderYStep;
+            } else if(this.changeXThus + this.minInvaderX < invaderXMargin) {
                 this.changeXThus = -this.changeXThus;
-                this.changeYThus = 16;
+                this.changeYThus = invaderYStep;
             }
 
             if(frameNum > this.lastDescentOrderFrame) {
@@ -263,6 +266,9 @@ var wuwei = function() {
                     new Invader(ix * charWidth, iy * charHeight, this);
                 }
             }
+            // ..and reset their orders:
+            this.changeXThus = invaderXStep;
+            this.changeYThus = 0;
         }
 
         learnAboutMinion(minion, frameNum) {
