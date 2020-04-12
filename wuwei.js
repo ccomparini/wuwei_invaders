@@ -4,19 +4,18 @@ var wuwei = function() {
     var gameObjects = new Map;
     var liveInvaders = new Map;
     var players  = new Map;
-    var fontSize = 16; // 'cuz this looks good to me
 
-    // XXX make this settable from html (or whatever) controls
-    var fieldWidthChars  = 40;
-    var fieldHeightChars = 24;
+    const fontSize = 16; // 'cuz this looks good to me
+    const fieldWidthChars  = 40;
+    const fieldHeightChars = 24;
 
     var invadersWon = false;
 
     // theoretically, updateInterval is integer ms, but
     // it seems that if I give it a float it dtrt and
     // actually updates more smoothly (on chrome, anyway).
-    // this might be because I chose 60/sec.  go figure/revisit:
-    var updateInterval = 60/1000;
+    // this might be because I chose 60/sec.  go figure/revisit?
+    const updateInterval = 60/1000;
 
     var field; // set by play();  is the html canvas on which we play
 
@@ -231,7 +230,7 @@ var wuwei = function() {
                 this.changeXThus = 0;
                 this.changeYThus = 0;
 
-                // we fly in and gloat as well:
+                // hive mind teleports in to gloat:
                 this.x = field.clientWidth  / 2;
                 this.y = field.clientHeight / 2;
                 
@@ -444,17 +443,24 @@ var wuwei = function() {
             // hiveMind creates and commands the invaders.
             // it stays off screen on planet x until the
             // invaders win.
-            var hiveMind = new HiveMind(0, -1000); 
+            var hiveMind = new HiveMind(0, -10000); 
 
-            // we need at least one player;  better though if this is on
-            // some event..
-            var p1 = new Player(field.clientWidth/2, field.clientHeight * .9);
+            // we need at least one player:
+            var p1 = new Player(field.clientWidth/3, field.clientHeight * .9);
             controls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
-            controls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
             controls[68] = p1.moveRight.bind(p1); // 68 = 'd'
-            controls[39] = p1.moveRight.bind(p1); // 39 = right arrow
             controls[87] = p1.shoot.bind(p1);     // 87 = 'w'
+            controls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
+            controls[39] = p1.moveRight.bind(p1); // 39 = right arrow
             controls[32] = p1.shoot.bind(p1);     // 32 = ' '
+
+/*
+            var p2 = new Player(field.clientWidth*2/3, field.clientHeight * .9);
+            controls[37] = p2.moveLeft.bind(p2);  // 37 = left arrow
+            controls[39] = p2.moveRight.bind(p2); // 39 = right arrow
+            //controls[32] = p2.shoot.bind(p2);     // 32 = ' '
+            controls[38] = p2.shoot.bind(p2);     // 38 = up arrow
+ */
 
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
