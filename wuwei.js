@@ -289,7 +289,12 @@ var wuwei = function() {
             super("無", x, y);
             this.master = master;
             this.nextMoveMs = 0;
+            this.nextShotMs = this.reloadMs();
             liveInvaders.set(this.id, this);
+        }
+
+        reloadMs() {
+            return Math.random() * Math.random() * 25000 + 1000;
         }
 
         behave(dt, frameNum) {
@@ -309,16 +314,14 @@ var wuwei = function() {
 
             super.behave(dt, frameNum); // mostly politeness
 
-            // XXX more arbitrary constants.  also maybe hive mind
-            // should set agressiveness. anywayzzz:
-            // XXX also need to scale to time!  oh have a "next shoot"
-            // attr.  should be fun.
-            if(!invadersWon && players.size && Math.random() < 0.0003) {
-                // ok so dt is usually ~ 4 ms
-                // so let's say 
-                // XXX need missile speed constant.  Also some
-                // rand to the speed could be amusing!
-                new Missile(this.x, this.y, 0, 0.2, players);
+            this.nextShotMs -= dt;
+            if(this.nextShotMs <= 0) {
+                if(!invadersWon && players.size) {
+                    this.nextShotMs = this.reloadMs();
+                    // XXX need missile speed constant.  Also some
+                    // rand to the speed could be amusing!
+                    new Missile(this.x, this.y, 0, 0.2, players);
+                }
             }
         }
 
