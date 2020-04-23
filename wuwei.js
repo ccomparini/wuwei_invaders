@@ -247,16 +247,32 @@ var wuwei = function() {
                 this.lastDescentOrderFrame = Infinity;
             }
 
-            if(liveInvaders.size === 0) {
+            if(liveInvaders.size === 0)
                 this.spawnMinions();
+
+            if(!this.nextRegroupCount)
+                this.nextRegroupCount = liveInvaders.size * .5;
+                //this.nextRegroupCount = liveInvaders.size * .75;
+
+            if(liveInvaders.size < this.nextRegroupCount) {
+                // we've taken losses!  troops need discipline.
+                // resetting the shot timers will get them more
+                // in sync.
+                this.nextRegroupCount = this.nextRegroupCount * .5;
+                for (let inv of liveInvaders.values()) {
+                    inv.nextShotMs = inv.reloadMs();
+                }
+
+//this.spawnMinions(1);
             }
         }
 
-        spawnMinions() {
+        spawnMinions(rows) {
+            if(!rows) rows = 4;
             // spawn minions. 
             var charWidth  = field.clientWidth  / fieldWidthChars;
             var charHeight = field.clientHeight / fieldHeightChars;
-            for(let iy = 1; iy < 5; iy++) {
+            for(let iy = 1; iy < rows + 1; iy++) {
                 // each row basically fills the field with minions,
                 // space out one "char width", with a little space
                 // on the left and slightly more on the right so they
@@ -294,12 +310,15 @@ var wuwei = function() {
             super("無", x, y);
             this.master = master;
             this.nextMoveMs = 0;
-            this.nextShotMs = this.reloadMs();
+            this.minReloadMs   = 1000;
+            this.reloadRangeMs = 25000;
+            this.nextShotMs    = this.reloadMs();
             liveInvaders.set(this.id, this);
         }
 
         reloadMs() {
-            return Math.random() * Math.random() * 25000 + 1000;
+            let rand = Math.random() * Math.random();
+            return rand * this.reloadRangeMs + this.minReloadMs;
         }
 
         behave(dt, frameNum) {
