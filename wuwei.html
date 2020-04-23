@@ -1,10 +1,43 @@
 <html>
+  <head>
+    <style type="text/css">
+      div {
+        background-color: "#ffffff";
+        color: "red";
+      }
+      #stage {
+        text-align: center;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 2px;
+        grid-auto-rows: minmax(100px, auto);
+      }
+      #title {
+        font-size: xxx-large;
+        grid-column: 1 / 4;
+        grid-row: 1;
+      }
+      #scoreboard {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      #playfield {
+        grid-column: 2 / 3;
+        grid-row: 2;
+      }
+      #settings {
+        grid-column: 3;
+        grid-row: 2;
+      }
+    </style>
+  </head>
   <body>
-    <div style="text-align: center">
-      <div style="font-size: xxx-large;">
+    <div id="stage">
+      <div id="title">
 	無爲
       </div>
       <span id="scoreboard">
+          score wat
       </span>
       <span id="playfield" style="display: inline-block">
       </span>
