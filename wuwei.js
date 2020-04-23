@@ -497,7 +497,7 @@ var wuwei = function() {
 
                 // draw the game elements.  looks like we don't
                 // have to bother double buffering.  runs good
-                // as-is, on my machine, anyway!
+                // on my machine, anyway!
                 var ctx = cleanCtx();
                 ctx.clearRect(0, 0, field.width, field.height);
                 for (let obj of gameObjects.values()) {
