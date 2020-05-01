@@ -4,20 +4,21 @@ var wuwei = function() {
     var gameObjects = new Map;
     var liveInvaders = new Map;
     var players  = new Map;
+    var invadersWon = false;
+    var field; // set by play();  is the html canvas on which we play
 
-    const fontSize = 16; // 'cuz this looks good to me
+    var settings = {
+    };
+
+    const fontSize = "16px"; // 'cuz this looks good to me
     const fieldWidthChars  = 40;
     const fieldHeightChars = 24;
-
-    var invadersWon = false;
 
     // theoretically, updateInterval is integer ms, but
     // it seems that if I give it a float it dtrt and
     // actually updates more smoothly (on chrome, anyway).
     // this might be because I chose 60/sec.  go figure/revisit?
     const updateInterval = 60/1000;
-
-    var field; // set by play();  is the html canvas on which we play
 
     function createField(container) {
         container.style.position = "relative";
@@ -43,7 +44,7 @@ var wuwei = function() {
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
         // everything in js is a fragile hack:
-        ctx.font = ctx.font.replace(/^\d+px/, fontSize + "px");
+        ctx.font = ctx.font.replace(/^\d+px/, fontSize);
         return ctx;
     }
 
@@ -340,7 +341,7 @@ var wuwei = function() {
 
             this.nextShotMs -= dt;
             if(this.nextShotMs <= 0) {
-                if(!invadersWon && players.size) {
+                if(!invadersWon && players.size) {  // XXX re-add
                     this.nextShotMs = this.reloadMs();
                     // XXX need missile speed constant.  Also some
                     // rand to the speed could be amusing!
@@ -395,10 +396,21 @@ var wuwei = function() {
     class Player extends GameObj {
         constructor(x, y) {
             super("🙏", x, y);
+            this.score = 0;
             players.set(this.id, this);
+
+            this.name = "Player " + players.size;
+        }
+
+        draw(ctx) {
+            if(!this.destroyed)
+                super.draw(ctx);
         }
 
         behave(dt, frameNum) {
+            if(this.destroyed)
+                return;
+
             if(this.isMoveRight && this.isMoveLeft) { // wtb xor
                 this.dx = 0;
             } else if(this.isMoveRight) {
@@ -454,10 +466,149 @@ var wuwei = function() {
         if(func) func(ev.type === "keydown");
     }
 
+    var showers = [ ];
+    var setters = [ ];
+
+    // syntax is data-expand="x:y" for expand x into y.
+    function expandElements(protoElement) {
+
+        // we're modifying the tree we're traversing (that's the whole
+        // goal here).  going depth first makes that less painful, so:
+        let kids = protoElement.children;
+        if(!kids) return;
+        for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
+            expandElements(kid);
+        }
+            
+        let expand = protoElement.dataset.expand;
+        if(expand) {
+            // We've got a "data-expand=x", which means we want
+            // to make a new element for each thing in the collection
+            // specified in x
+
+            let [ from, into ] = expand.split(":", 2);
+            let parsedFrom = parseDisplayDef(protoElement, from);
+
+            // for each thing in the containingObject[variable],
+            // we need to make an html element to represent that
+            // thing.  (let's say containing objects have to be
+            // maps because js isn't consistent about collections :P)
+            let objs = parsedFrom.containingObject;
+            for (let [key, obj] of objs) {
+                let newElem = protoElement.cloneNode(true);
+                // need to change the id of the clone, or else it
+                // inherits the id and we get duplicate ids
+                newElem.id = newElem.id + "-" + key;
+
+                // also don't expand the new element:
+                delete newElem.dataset.expand;
+
+// XXX this means you can only bind a display within an expand, which is weak/problematic.  Maybe just translate the names here and then bindDisplay in another pass as it was before.
+// XXX rename to from/to I think in bindDisplay
+                bindDisplay(newElem, { name: into, to: obj });
+
+                protoElement.parentElement.insertBefore(newElem, protoElement);
+                expanded = true;
+            }
+
+            // finally, hide the element which we expanded (since it's
+            // the prototype and doesn't make sense to keep around,
+            // unless expansion didn't work (expanded === false),
+            // in which case I think it's better to see it so you can
+            // notice/try to see what went wrong:
+            protoElement.style.display = 'none';
+        }
+    }
+
+    // Note:  elem is basically jammed back into the result,
+    // and not really used, because doing so is convenient
+    // for callers.
+    function parseDisplayDef(elem, variable, subst) {
+        variable.replace(/[^A-Za-z_.]/g, "");
+        let parts = variable.split(".");
+
+        // XXX check:
+        //   parts needs to be at least 2 elements
+        //   parts needs to refer to something sensible
+        // XXX oh duh just eval everything up to the last variable
+        // (though maybe that won't show which part of the variable
+        // is unavailable)
+        // XXX actually, do this without evals.  Make it so that
+        // html can only access things within a "game" structure.
+        // XXX kill subst
+        let obj; // = eval(parts[0]);
+        if(subst && subst.name === parts[0]) {
+            obj = subst.to;
+        } else {
+            try {
+                obj = eval(parts[0]);
+            }
+            catch(error) {
+                console.log("eval of '" + parts[0] + "' failed: " + error);
+            }
+        }
+
+        for(let pi = 1; pi < parts.length - 1; pi++) {
+            if(!obj) {
+                console.log("no such variable '" + parts[pi] + "' in '" + variable + "'");
+                break;
+            }
+            obj = obj[parts[pi]];
+        }
+
+        if(!obj) {
+            obj = { };
+            console.log("could not parse display def for " + variable);
+        }
+
+        return {
+            element: elem,
+            // XXX rename containingObject
+            containingObject: obj,
+            variable: parts[parts.length - 1],
+        };
+    }
+
+    function bindDisplay(display, subst) {
+        // ok let's say display elements have:
+        //  - (optionally) the element which sets the thing
+        //    in which case, in here, we set onChange or whatever
+        //    so like <blah data-controls="debug"> hmmm
+        //  - (optionally) the element on which to display the thing
+        //    so like <blah data-shows="player.score">
+        let shows = display.dataset.shows;
+        if(shows)
+            showers.push(parseDisplayDef(display, shows, subst));
+
+        let ctrl = display.dataset.controls;
+        if(ctrl) {
+            showers.push(parseDisplayDef(display, ctrl, subst));
+            setters.push(parseDisplayDef(display, ctrl, subst));
+        }
+
+        // controllers can be compound. i.e. we may
+        // pass in an outer element with inner elements
+        // displaying various things.  So recurse sub
+        // elements.
+        let kids = display.children;
+        for (let ci = 0; ci < kids.length; ci++) {
+            bindDisplay(kids[ci], subst);
+        }
+    }
+
+    function updateDisplays() {
+        for (let di = showers.length - 1; di >= 0; di--) {
+            let shower = showers[di];
+            // XXX formatting/efficiency
+            //   - rename containingObject; variable -> var or member
+            shower.element.textContent = shower.containingObject[shower.variable];
+        }
+    }
+
     return {
 
-        'play': function(elements) {
-            field = createField(elements.playfield);
+        'play': function(setup) {
+            field = createField(setup.playfield);
 
             // hiveMind creates and commands the invaders.
             // it stays off screen on planet x until the
@@ -484,10 +635,34 @@ var wuwei = function() {
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
 
+            // ok so controls:
+            //  - need a way to show the user the key
+            //  - obvi bind them;  bindings should be exclusive though.
+            // more general case of settings:  let's say we make a set
+            // of settings available to the html layer and they can bind
+            // them to controls via .. some call.  maybe it can be in one
+            // bangarino, like they call one method with a big
+            // control -> setting list or something?  could be passed in
+            // here, actually.  Let's do that.  in settings.
+            //  what kind of controls do we need?
+            //  in order of importance, descending:
+            //  - scores... hmm is this a control?  I guess the way to
+            //    do this is have ... I guess it could just set the content.
+            //    actually, it might have to set the content.  think of it.
+            //    you might add a player.  ok so how about it duplicates
+            //    a score display.  ok you know, yes let's do that.
+            //  - debug checkbox - this is input
+            //  - difficulty
+            //
+            // See also:
+            //    https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements
+            //
+            setup.displays.forEach(expandElements);
+            setup.displays.forEach(bindDisplay);
             let lastUpdate = Date.now();
             let frameNum = 0;
             window.setInterval(function() {
-                //var colliders = new Map;
+                updateDisplays();
 
                 var now = Date.now();
                 var deltaT = now - lastUpdate;
