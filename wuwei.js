@@ -1,14 +1,31 @@
 
 var wuwei = function() {
-    var nextObjId = 1;
-    var gameObjects = new Map;
-    var liveInvaders = new Map;
-    var players  = new Map;
-    var invadersWon = false;
-    var field; // set by play();  is the html canvas on which we play
 
-    var settings = {
+    var nextObjId = 1;
+
+    var counterer = {
+        count: {
+            get: function() { return Object.keys(this).length; },
+        },
     };
+
+    var game = {
+        objects: Object.create(null, counterer),
+        liveInvaders: Object.create(null, counterer),
+        players:  Object.create(null, counterer),
+        invadersWon: false,
+
+        //var field; // set by play();  is the html canvas on which we play
+        settings: {
+            missileSpeed: 0.2,
+            playerSpeed:  0.2,
+        }
+    };
+/*
+    for (let obj of Object.values(game)) {
+        obj.count = count;
+    }
+ */
 
     const fontSize = "16px"; // 'cuz this looks good to me
     const fieldWidthChars  = 40;
@@ -74,7 +91,7 @@ var wuwei = function() {
             this.minY = -measurements.actualBoundingBoxAscent;
             this.maxY =  measurements.actualBoundingBoxDescent;
 
-            gameObjects.set(this.id, this);
+            game.objects[this.id] = this;
         }
 
         behave(dt, frameNum) {
@@ -134,7 +151,7 @@ var wuwei = function() {
         }
 
         destroy() {
-            gameObjects.delete(this.id);
+            delete game.objects[this.id];
         }
 
     }
@@ -154,7 +171,7 @@ var wuwei = function() {
         behave(dt, frameNum) {
             super.behave(dt, frameNum);
 
-            for(let target of this.vsGroup.values()) {
+            for(let target of Object.values(this.vsGroup)) {
                 if(this.collidesWith(target, dt)) {
                     target.destroy();
                     this.destroy();
@@ -179,7 +196,7 @@ var wuwei = function() {
             if(otherObj.x + otherObj.minX <= this.x) {
                 if(otherObj.x + otherObj.maxX >= this.x) {
                     // we're within the left/right boundaries.
-                    // actualy just checking x,y appears to be sufficient,
+                    // actually just checking x,y appears to be sufficient,
                     // at least if you have a good framerate!  cheating.
                     // XXX fix/take into account dt
                     if(otherObj.y + otherObj.maxY >= this.y) {
@@ -226,7 +243,7 @@ var wuwei = function() {
 
         behave(dt, frameNum) {
 
-            if(invadersWon) {
+            if(game.invadersWon) {
                 // invaders stand and gloat:
                 this.changeXThus = 0;
                 this.changeYThus = 0;
@@ -248,23 +265,20 @@ var wuwei = function() {
                 this.lastDescentOrderFrame = Infinity;
             }
 
-            if(liveInvaders.size === 0)
+            if(game.liveInvaders.count  === 0)
                 this.spawnMinions();
 
             if(!this.nextRegroupCount)
-                this.nextRegroupCount = liveInvaders.size * .5;
-                //this.nextRegroupCount = liveInvaders.size * .75;
+                this.nextRegroupCount = game.liveInvaders.count * .5;
 
-            if(liveInvaders.size < this.nextRegroupCount) {
+            if(game.liveInvaders.count < this.nextRegroupCount) {
                 // we've taken losses!  troops need discipline.
                 // resetting the shot timers will get them more
                 // in sync.
                 this.nextRegroupCount = this.nextRegroupCount * .5;
-                for (let inv of liveInvaders.values()) {
+                for (let inv of game.liveInvaders.values()) {
                     inv.nextShotMs = inv.reloadMs();
                 }
-
-//this.spawnMinions(1);
             }
         }
 
@@ -314,7 +328,7 @@ var wuwei = function() {
             this.minReloadMs   = 1000;
             this.reloadRangeMs = 25000;
             this.nextShotMs    = this.reloadMs();
-            liveInvaders.set(this.id, this);
+            game.liveInvaders[this.id] = this;
         }
 
         reloadMs() {
@@ -341,22 +355,24 @@ var wuwei = function() {
 
             this.nextShotMs -= dt;
             if(this.nextShotMs <= 0) {
-                if(!invadersWon && players.size) {  // XXX re-add
+                if(!game.invadersWon && game.players.count) {
                     this.nextShotMs = this.reloadMs();
-                    // XXX need missile speed constant.  Also some
-                    // rand to the speed could be amusing!
-                    new Missile(this.x, this.y, 0, 0.2, players);
+                    // Also some rand to the speed could be amusing
+                    new Missile(
+                        this.x, this.y,
+                        0, game.settings.missileSpeed, game.players
+                    );
                 }
             }
         }
 
         destroy() {
             super.destroy();
-            liveInvaders.delete(this.id);
+            delete game.liveInvaders[this.id];
         }
 
         hitGround() {
-            invadersWon = true;
+            game.invadersWon = true;
         }
     }
 
@@ -397,9 +413,9 @@ var wuwei = function() {
         constructor(x, y) {
             super("🙏", x, y);
             this.score = 0;
-            players.set(this.id, this);
+            game.players[this.id] = this;
 
-            this.name = "Player " + players.size;
+            this.name = "Player " + game.players.count;
         }
 
         draw(ctx) {
@@ -414,9 +430,9 @@ var wuwei = function() {
             if(this.isMoveRight && this.isMoveLeft) { // wtb xor
                 this.dx = 0;
             } else if(this.isMoveRight) {
-                this.dx = 0.2;
+                this.dx = game.settings.playerSpeed;
             } else if(this.isMoveLeft) {
-                this.dx = -0.2;
+                this.dx = -game.settings.playerSpeed;
             } else {
                 this.dx = 0;
             }
@@ -424,14 +440,17 @@ var wuwei = function() {
             super.behave(dt, frameNum);
 
             if(this.isShooting) {
-                new Missile(this.x, this.y, 0, -0.2, liveInvaders);
+                new Missile(
+                    this.x, this.y, 0,
+                    -game.settings.missileSpeed, game.liveInvaders
+                );
                 this.isShooting = false;
             }
         }
 
         destroy() {
             super.destroy();
-            players.delete(this.id);
+            delete game.players[this.id];
         }
 
         hitSide(dt) {
@@ -460,7 +479,7 @@ var wuwei = function() {
     var controls = { };
 
     function dispatchKeyEvent(ev) {
-        console.log("key event " + ev.type + " " + ev.keyCode);
+        //console.log("key event " + ev.type + " " + ev.keyCode);
 
         var func = controls[ev.keyCode];
         if(func) func(ev.type === "keydown");
@@ -469,86 +488,67 @@ var wuwei = function() {
     var showers = [ ];
     var setters = [ ];
 
-    // syntax is data-expand="x:y" for expand x into y.
-    function expandElements(protoElement) {
+    // expands elements with "data-expand", creating one copy of the
+    // element for each item in the group specified, and with data-scope
+    // set to the corresponding item in the group.
+    function expandElements(protoElement, scope) {
+        let dataset = protoElement.dataset || { };
+        let expand = dataset.expand;
 
-        // we're modifying the tree we're traversing (that's the whole
-        // goal here).  going depth first makes that less painful, so:
-        let kids = protoElement.children;
-        if(!kids) return;
-        for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
-            expandElements(kid);
-        }
-            
-        let expand = protoElement.dataset.expand;
+        scope = rescope(protoElement, scope);
+
         if(expand) {
-            // We've got a "data-expand=x", which means we want
-            // to make a new element for each thing in the collection
-            // specified in x
+            // We've got a "data-expand=x", which means we want to
+            // make a new element for each thing in collection x
+            let parsedFrom = parseDisplayDef(protoElement, expand, scope);
 
-            let [ from, into ] = expand.split(":", 2);
-            let parsedFrom = parseDisplayDef(protoElement, from);
+            // at this point, we are going to expand this thing, and we
+            // don't want its clones inheriting "expand" (which could
+            // lead to infinite expansion), so kill the data-expand:
+            delete protoElement.dataset.expand;
 
             // for each thing in the containingObject[variable],
-            // we need to make an html element to represent that
-            // thing.  (let's say containing objects have to be
-            // maps because js isn't consistent about collections :P)
-            let objs = parsedFrom.containingObject;
-            for (let [key, obj] of objs) {
+            // we need to make a copy of the prototype html element
+            // to represent that thing.  (let's say containing objects
+            // have to be maps because js isn't consistent about
+            // collections :P)
+            let objs = parsedFrom.containingObject[parsedFrom.variable];
+            for (const key in objs) {
+                
                 let newElem = protoElement.cloneNode(true);
-                // need to change the id of the clone, or else it
-                // inherits the id and we get duplicate ids
+
+                // change the id of the clone, or else it inherits
+                // the id and we get duplicate ids:
                 newElem.id = newElem.id + "-" + key;
 
-                // also don't expand the new element:
-                delete newElem.dataset.expand;
-
-// XXX this means you can only bind a display within an expand, which is weak/problematic.  Maybe just translate the names here and then bindDisplay in another pass as it was before.
-// XXX rename to from/to I think in bindDisplay
-                bindDisplay(newElem, { name: into, to: obj });
+                // tell the new element what scope it's in:
+                newElem.dataset.scope = expand + "." + key;
 
                 protoElement.parentElement.insertBefore(newElem, protoElement);
-                expanded = true;
             }
 
             // finally, hide the element which we expanded (since it's
-            // the prototype and doesn't make sense to keep around,
-            // unless expansion didn't work (expanded === false),
-            // in which case I think it's better to see it so you can
-            // notice/try to see what went wrong:
+            // the prototype and doesn't make sense to keep showing)
             protoElement.style.display = 'none';
+        }
+
+        let kids = protoElement.children;
+        if(!kids) return;
+        for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
+            expandElements(kid, scope);
         }
     }
 
-    // Note:  elem is basically jammed back into the result,
-    // and not really used, because doing so is convenient
+    // Note:  elem is basically jammed back into the result
+    // (and not really used here) because doing so is convenient
     // for callers.
-    function parseDisplayDef(elem, variable, subst) {
+    function parseDisplayDef(elem, variable, scope) {
         variable.replace(/[^A-Za-z_.]/g, "");
         let parts = variable.split(".");
 
-        // XXX check:
-        //   parts needs to be at least 2 elements
-        //   parts needs to refer to something sensible
-        // XXX oh duh just eval everything up to the last variable
-        // (though maybe that won't show which part of the variable
-        // is unavailable)
-        // XXX actually, do this without evals.  Make it so that
-        // html can only access things within a "game" structure.
-        // XXX kill subst
-        let obj; // = eval(parts[0]);
-        if(subst && subst.name === parts[0]) {
-            obj = subst.to;
-        } else {
-            try {
-                obj = eval(parts[0]);
-            }
-            catch(error) {
-                console.log("eval of '" + parts[0] + "' failed: " + error);
-            }
-        }
+        let obj = scope;
 
-        for(let pi = 1; pi < parts.length - 1; pi++) {
+        for(let pi = 0; pi < parts.length - 1; pi++) {
             if(!obj) {
                 console.log("no such variable '" + parts[pi] + "' in '" + variable + "'");
                 break;
@@ -557,7 +557,7 @@ var wuwei = function() {
         }
 
         if(!obj) {
-            obj = { };
+            obj = new Map;
             console.log("could not parse display def for " + variable);
         }
 
@@ -569,7 +569,20 @@ var wuwei = function() {
         };
     }
 
-    function bindDisplay(display, subst) {
+    function rescope(elem, existingScope) {
+        if(elem.dataset && elem.dataset.scope) {
+            let ns = parseDisplayDef(elem, elem.dataset.scope, existingScope);
+            return ns.containingObject[ns.variable];
+        } else {
+            return existingScope;
+        }
+    }
+
+    function bindDisplay(display, scope) {
+        if(!display.dataset) return;
+
+        scope = rescope(display, scope);
+ 
         // ok let's say display elements have:
         //  - (optionally) the element which sets the thing
         //    in which case, in here, we set onChange or whatever
@@ -577,13 +590,17 @@ var wuwei = function() {
         //  - (optionally) the element on which to display the thing
         //    so like <blah data-shows="player.score">
         let shows = display.dataset.shows;
-        if(shows)
-            showers.push(parseDisplayDef(display, shows, subst));
+        if(shows) {
+            showers.push(parseDisplayDef(display, shows, scope));
+            delete display.dataset.shows; // so we don't bind it again
+        }
 
         let ctrl = display.dataset.controls;
         if(ctrl) {
-            showers.push(parseDisplayDef(display, ctrl, subst));
-            setters.push(parseDisplayDef(display, ctrl, subst));
+            let def = parseDisplayDef(display, ctrl, scope);
+            showers.push(def);
+            setters.push(def);
+            delete display.dataset.controls;
         }
 
         // controllers can be compound. i.e. we may
@@ -592,16 +609,18 @@ var wuwei = function() {
         // elements.
         let kids = display.children;
         for (let ci = 0; ci < kids.length; ci++) {
-            bindDisplay(kids[ci], subst);
+            bindDisplay(kids[ci], scope);
         }
     }
 
     function updateDisplays() {
         for (let di = showers.length - 1; di >= 0; di--) {
             let shower = showers[di];
-            // XXX formatting/efficiency
-            //   - rename containingObject; variable -> var or member
-            shower.element.textContent = shower.containingObject[shower.variable];
+            let val = shower.containingObject[shower.variable];
+            if (typeof val === "function") {
+                val = val();
+            }
+            shower.element.textContent = val;
         }
     }
 
@@ -657,8 +676,8 @@ var wuwei = function() {
             // See also:
             //    https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements
             //
-            setup.displays.forEach(expandElements);
-            setup.displays.forEach(bindDisplay);
+            setup.displays.forEach(function(el) { expandElements(el, game); });
+            setup.displays.forEach(function(el) { bindDisplay(el, game); });
             let lastUpdate = Date.now();
             let frameNum = 0;
             window.setInterval(function() {
@@ -666,7 +685,7 @@ var wuwei = function() {
 
                 var now = Date.now();
                 var deltaT = now - lastUpdate;
-                for (let obj of gameObjects.values()) {
+                for (let obj of Object.values(game.objects)) {
                     obj.behave(deltaT, frameNum);
                 }
 
@@ -675,7 +694,7 @@ var wuwei = function() {
                 // on my machine, anyway!
                 var ctx = cleanCtx();
                 ctx.clearRect(0, 0, field.width, field.height);
-                for (let obj of gameObjects.values()) {
+                for (let obj of Object.values(game.objects)) {
                     obj.draw(ctx);
                 }
 
