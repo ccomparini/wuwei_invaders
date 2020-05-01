@@ -37,10 +37,22 @@
 	無爲
       </div>
       <span id="scoreboard">
+        <h3>Scores</h3>
+        <div id="score-player" data-expand="players:player" data-fruit="bat">
+          <span data-controls="player.name"> </span>:
+          <span data-shows="player.score"> </span>
+        </div>
+        <div id="num-bad-guys">
+          <span>How many invaders are left: </span>
+          <span data-shows="liveInvaders.size"> </span>
+        </div>
       </span>
       <span id="playfield" style="display: inline-block">
       </span>
       <span id="settings">
+        <span id="controls">
+          
+        </span>
       </span>
     </div>
   </body>
@@ -48,7 +60,9 @@
   <script>
     wuwei.play({
       playfield:  document.getElementById("playfield"),
-      //scoreboard: document.getElementById("scoreboard"),
+      displays: [
+        document.getElementById("scoreboard"),
+      ]
     });
   </script>
 </html>
