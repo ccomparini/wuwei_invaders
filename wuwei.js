@@ -69,6 +69,8 @@ var wuwei = function() {
         constructor(ch, x, y) {
             this.id = nextObjId++;
 
+            this.pointValue = 100;
+
             this.isAlive = true;
 
             this.appearance = ch;
@@ -157,7 +159,7 @@ var wuwei = function() {
     }
 
     class Missile extends GameObj {
-        constructor(x, y, dx, dy, vsGroup) {
+        constructor(x, y, dx, dy, vsGroup, shooter) {
             if(dy > 0)
                 super("↓", x, y);
             else
@@ -166,6 +168,7 @@ var wuwei = function() {
             this.dx = dx;
             this.dy = dy;
             this.vsGroup = vsGroup;
+            this.shooter = shooter;
         }
 
         behave(dt, frameNum) {
@@ -174,6 +177,9 @@ var wuwei = function() {
             for(let target of Object.values(this.vsGroup)) {
                 if(this.collidesWith(target, dt)) {
                     target.destroy();
+                    if(target.pointValue) {
+                        this.shooter.score += target.pointValue;
+                    }
                     this.destroy();
                 }
             }
@@ -360,7 +366,8 @@ var wuwei = function() {
                     // Also some rand to the speed could be amusing
                     new Missile(
                         this.x, this.y,
-                        0, game.settings.missileSpeed, game.players
+                        0, game.settings.missileSpeed,
+                        game.players, this
                     );
                 }
             }
@@ -442,7 +449,8 @@ var wuwei = function() {
             if(this.isShooting) {
                 new Missile(
                     this.x, this.y, 0,
-                    -game.settings.missileSpeed, game.liveInvaders
+                    -game.settings.missileSpeed,
+                    game.liveInvaders, this
                 );
                 this.isShooting = false;
             }
