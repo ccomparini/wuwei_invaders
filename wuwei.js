@@ -88,7 +88,13 @@ var wuwei = function() {
             // to a setAppearance method?  whatevs.
             var ctx = cleanCtx();
             var measurements = ctx.measureText(this.appearance);
-            this.minX = -measurements.actualBoundingBoxLeft;
+            // abs() here because apparently chrome and safari consider
+            // "box left" to be the (positive) distance to go to the left
+            // to find the edge, which firefox (imo, more logically)
+            // considers it the left coordinate, and thus firefox uses
+            // a negative number for it where the others use a positive
+            // one.  So (hopefully) this makes it work for both.
+            this.minX = -Math.abs(measurements.actualBoundingBoxLeft);
             this.maxX =  measurements.actualBoundingBoxRight;
             this.minY = -measurements.actualBoundingBoxAscent;
             this.maxY =  measurements.actualBoundingBoxDescent;
