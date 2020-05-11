@@ -648,6 +648,9 @@ var wuwei = function() {
             // hiveMind creates and commands the invaders.
             // it stays off screen on planet x until the
             // invaders win.
+            // the strange part is that planet x has an x
+            // coordinate of 0 (but a large negative y coordinate).
+            // ironic, isn't it.
             var hiveMind = new HiveMind(0, -10000); 
 
             // we need at least one player:
@@ -696,6 +699,7 @@ var wuwei = function() {
             setup.displays.forEach(function(el) { bindDisplay(el, game); });
             let lastUpdate = Date.now();
             let frameNum = 0;
+            var ctx = cleanCtx();
             window.setInterval(function() {
                 updateDisplays();
 
@@ -708,7 +712,6 @@ var wuwei = function() {
                 // draw the game elements.  looks like we don't
                 // have to bother double buffering.  runs good
                 // on my machine, anyway!
-                var ctx = cleanCtx();
                 ctx.clearRect(0, 0, field.width, field.height);
                 for (let obj of Object.values(game.objects)) {
                     obj.draw(ctx);
