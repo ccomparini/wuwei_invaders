@@ -3,6 +3,14 @@ var wuwei = function() {
 
     var nextObjId = 1;
 
+    // when using objects as collections, it's awkward
+    // to get the size of the collection.  but (and after
+    // a long and great annoyance with Map) using objects
+    // for everything makes it easier to have a consistent
+    // and simple implementation for having html elements
+    // access info about the state of the game.
+    // So anyway, counterer is a hokey way to make it easy
+    // to get a count of items in a collection-like object:
     var counterer = {
         count: {
             get: function() { return Object.keys(this).length; },
@@ -21,11 +29,6 @@ var wuwei = function() {
             playerSpeed:  0.2,
         }
     };
-/*
-    for (let obj of Object.values(game)) {
-        obj.count = count;
-    }
- */
 
     const fontSize = "16px"; // 'cuz this looks good to me
     const fieldWidthChars  = 40;
@@ -213,7 +216,6 @@ var wuwei = function() {
                     // XXX fix/take into account dt
                     if(otherObj.y + otherObj.maxY >= this.y) {
                         if(otherObj.y + otherObj.minY <= this.y) {
-                            console.log("A palpable hit!");
                             hit = otherObj;
                         }
                     }
@@ -288,7 +290,7 @@ var wuwei = function() {
                 // resetting the shot timers will get them more
                 // in sync.
                 this.nextRegroupCount = this.nextRegroupCount * .5;
-                for (let inv of game.liveInvaders.values()) {
+                for (let inv of Object.values(game.liveInvaders)) {
                     inv.nextShotMs = inv.reloadMs();
                 }
             }
