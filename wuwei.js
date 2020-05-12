@@ -68,11 +68,24 @@ var wuwei = function() {
         return ctx;
     }
 
+    class GameObjStats {
+        constructor() {
+            this.score  = 0;
+            this.misses = 0;
+
+            // kills keys are obj "appearance", values are counts:
+            this.kills  = { }; 
+        }
+    }
+
     class GameObj {
         constructor(ch, x, y) {
             this.id = nextObjId++;
 
-            this.pointValue = 100;
+            this.name = new.target.name + " " + this.id;
+            this.stats = new GameObjStats();
+
+            this.pointValue = 0;
 
             this.isAlive = true;
 
@@ -187,7 +200,7 @@ var wuwei = function() {
                 if(this.collidesWith(target, dt)) {
                     target.destroy();
                     if(target.pointValue) {
-                        this.shooter.score += target.pointValue;
+                        this.shooter.stats.score += target.pointValue;
                     }
                     this.destroy();
                 }
@@ -252,7 +265,9 @@ var wuwei = function() {
             this.lastDescentOrderFrame = Infinity;
             this.changeXThus = invaderXStep;
             this.changeYThus = 0;
+            this.pointValue = Infinity;
 
+            this.spawnMinions();
         }
 
         behave(dt, frameNum) {
@@ -342,6 +357,7 @@ var wuwei = function() {
             this.minReloadMs   = 1000;
             this.reloadRangeMs = 25000;
             this.nextShotMs    = this.reloadMs();
+            this.pointValue    = 100;
             game.liveInvaders[this.id] = this;
         }
 
@@ -427,10 +443,10 @@ var wuwei = function() {
     class Player extends GameObj {
         constructor(x, y) {
             super("🙏", x, y);
-            this.score = 0;
             game.players[this.id] = this;
 
             this.name = "Player " + game.players.count;
+            this.pointValue = Infinity;
         }
 
         draw(ctx) {
