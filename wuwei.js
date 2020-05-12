@@ -139,6 +139,20 @@ var wuwei = function() {
             this.y += this.dy * dt;
         }
 
+        creditKill(victim) {
+            this.stats.score += victim.pointValue;
+            if(!this.stats.kills[victim.appearance]) {
+                this.stats.kills[victim.appearance] = 0;
+            } else {
+                this.stats.kills[victim.appearance]++;
+            }
+
+            // if this object has a master, the master gets credit too
+            if(this.master) {
+                this.master.creditKill(victim);
+            }
+        }
+
         hitSky(dt) {
             this.destroy();
         }
@@ -199,9 +213,7 @@ var wuwei = function() {
             for(let target of Object.values(this.vsGroup)) {
                 if(this.collidesWith(target, dt)) {
                     target.destroy();
-                    if(target.pointValue) {
-                        this.shooter.stats.score += target.pointValue;
-                    }
+                    this.shooter.creditKill(target);
                     this.destroy();
                 }
             }
@@ -266,6 +278,7 @@ var wuwei = function() {
             this.changeXThus = invaderXStep;
             this.changeYThus = 0;
             this.pointValue = Infinity;
+            this.name = "Hive Mind 0";
 
             this.spawnMinions();
         }
@@ -363,6 +376,7 @@ var wuwei = function() {
 
         reloadMs() {
             let rand = Math.random() * Math.random();
+            //let rand = Math.random() * Math.random() * Math.random() * Math.random(); // way brutal!
             return rand * this.reloadRangeMs + this.minReloadMs;
         }
 
@@ -667,7 +681,7 @@ var wuwei = function() {
             // the strange part is that planet x has an x
             // coordinate of 0 (but a large negative y coordinate).
             // ironic, isn't it.
-            var hiveMind = new HiveMind(0, -10000); 
+            game.hiveMind = new HiveMind(0, -10000); 
 
             // we need at least one player:
             var p1 = new Player(field.clientWidth/3, field.clientHeight * .9);
