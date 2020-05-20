@@ -670,9 +670,39 @@ var wuwei = function() {
         }
     }
 
+    function serverSocket() {
+        const url = 'ws://' + location.hostname + ':29234/';
+        //const url = 'ws://' + location.hostname + ':80';
+	// 'wuwei' sub protocol fails on chrome (Sec-WebSocket-Protocol)
+        //const socket = new WebSocket(url, 'wuwei');
+        const socket = new WebSocket(url);
+
+//socket.send("greetings, earthling");
+
+        socket.onerror = function (ev) {
+            console.error('Error on socket to ' + url + ': ' + ev);
+        };
+
+        socket.onmessage = function (ev) {
+            console.log('Message from ' + url + ': ' + ev.data);
+        };
+
+        socket.onclose = function(ev) {
+            console.log('closed ' + url + ': ' + ev);
+        };
+
+        socket.onopen = function (ev) {
+            socket.send('Hello Server!'); // XXX 
+        };
+
+        return socket;
+    }
+
     return {
 
         'play': function(setup) {
+            const server = serverSocket();
+
             field = createField(setup.playfield);
 
             // hiveMind creates and commands the invaders.
