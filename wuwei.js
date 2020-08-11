@@ -701,7 +701,7 @@ var wuwei = function() {
     return {
 
         'play': function(setup) {
-            const server = serverSocket();
+            //const server = serverSocket();
 
             field = createField(setup.playfield);
 
