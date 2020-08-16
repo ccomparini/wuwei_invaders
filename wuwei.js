@@ -532,7 +532,7 @@ var wuwei = function() {
     }
 
     var showers = [ ];
-    var setters = [ ];
+    var setters = [ ];  // XXX kill this
 
     // expands elements with "data-expand", creating one copy of the
     // element for each item in the group specified, and with data-scope
@@ -632,20 +632,24 @@ var wuwei = function() {
         // ok let's say display elements have:
         //  - (optionally) the element which sets the thing
         //    in which case, in here, we set onChange or whatever
-        //    so like <blah data-controls="debug"> hmmm
+        //    so like <blah data-controls="debug">. if set, this
+        //    would normally also be what it shows.
         //  - (optionally) the element on which to display the thing
         //    so like <blah data-shows="player.score">
-        let shows = display.dataset.shows;
+        let shows = display.dataset.shows || display.dataset.controls;
+        let ctrl  = display.dataset.controls;
         if(shows) {
             showers.push(parseDisplayDef(display, shows, scope));
             delete display.dataset.shows; // so we don't bind it again
         }
 
-        let ctrl = display.dataset.controls;
         if(ctrl) {
             let def = parseDisplayDef(display, ctrl, scope);
             showers.push(def);
-            setters.push(def);
+            let el = def.element;
+            el.contenteditable = true; // doesn't seem to work; have to set in html?
+            el.addEventListener('change', function(ev) { updateControl(def) });
+            el.addEventListener('input',  function(ev) { updateControl(def) });
             delete display.dataset.controls;
         }
 
@@ -659,6 +663,15 @@ var wuwei = function() {
         }
     }
 
+    function updateControl(def) {
+        let el = def.element;
+        if(el.innerText === undefined) {
+            def.containingObject[def.variable] = el.value;
+        } else {
+            def.containingObject[def.variable] = el.innerText;
+        }
+    }
+
     function updateDisplays() {
         for (let di = showers.length - 1; di >= 0; di--) {
             let shower = showers[di];
@@ -666,7 +679,13 @@ var wuwei = function() {
             if (typeof val === "function") {
                 val = val();
             }
-            shower.element.textContent = val;
+            if(document.activeElement !== shower.element) {
+                shower.element.textContent = val;
+                shower.element.value = val; // for inputs
+                if(val !== undefined) {
+                    shower.element.style.width = val.length + "ch";
+                }
+            }
         }
     }
 
