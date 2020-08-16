@@ -29,6 +29,15 @@
         grid-column: 3;
         grid-row: 2;
       }
+      .player-name {
+        border: none;
+        display: inline;
+        font-family: inherit;
+        font-size: inherit;
+        padding: none;
+        text-align: center;
+        width: auto;
+      }
     </style>
   </head>
   <body>
@@ -39,11 +48,11 @@
       <span id="scoreboard">
         <h3>Scores</h3>
         <div id="score-player" data-expand="players">
-          <span data-controls="name"> </span>:
+          <span data-controls="name" contenteditable></span>:
           <span data-shows="stats.score"> </span>
         </div>
         <div id="score-hive-mind" data-scope="hiveMind">
-          <span data-controls="name"> </span>:
+          <span data-shows="name"> </span>:
           <span data-shows="stats.score"> </span>
         </div>
         <hr>
