@@ -517,12 +517,19 @@ var wuwei = function() {
             this.isMoveRight = start;
         }
 
-        shoot(start) {
-            this.isShooting = start;
+        shoot(keyDown) {
+            if(keyDown && !this.isReloading) {
+                this.isShooting  = true;
+                // isReloading makes it so you have
+                // key up before shooting again:
+                this.isReloading = true;
+            }
+
+            if(!keyDown) {
+                this.isReloading = false;
+            }
         }
     }
-
-    var controls = { };
 
     function dispatchKeyEvent(ev) {
         //console.log("key event " + ev.type + " " + ev.keyCode);
