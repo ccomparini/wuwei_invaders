@@ -278,7 +278,8 @@ var wuwei = function() {
             this.changeXThus = invaderXStep;
             this.changeYThus = 0;
             this.pointValue = Infinity;
-            this.name = "Hive Mind 0";
+            //this.name = "Hive Mind 0";
+            this.name = "侵略者";
 
             this.spawnMinions();
         }
