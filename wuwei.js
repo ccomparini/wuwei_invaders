@@ -139,10 +139,18 @@ var wuwei = function() {
             this.y += this.dy * dt;
         }
 
+        credit(numPoints) {
+            this.stats.score += numPoints;
+            if(this.master) {
+                // master of this object gets credit, too
+                this.master.credit(numPoints);
+            }
+        }
+
         creditKill(victim) {
             this.stats.score += victim.pointValue;
             if(!this.stats.kills[victim.appearance]) {
-                this.stats.kills[victim.appearance] = 0;
+                this.stats.kills[victim.appearance] = 1;
             } else {
                 this.stats.kills[victim.appearance]++;
             }
@@ -195,7 +203,7 @@ var wuwei = function() {
     }
 
     class Missile extends GameObj {
-        constructor(x, y, dx, dy, vsGroup, shooter) {
+        constructor(x, y, dx, dy, vsGroup, master) {
             if(dy > 0)
                 super("↓", x, y);
             else
@@ -204,7 +212,7 @@ var wuwei = function() {
             this.dx = dx;
             this.dy = dy;
             this.vsGroup = vsGroup;
-            this.shooter = shooter;
+            this.master = master;
         }
 
         behave(dt, frameNum) {
@@ -213,7 +221,7 @@ var wuwei = function() {
             for(let target of Object.values(this.vsGroup)) {
                 if(this.collidesWith(target, dt)) {
                     target.destroy();
-                    this.shooter.creditKill(target);
+                    this.creditKill(target);
                     this.destroy();
                 }
             }
@@ -231,7 +239,7 @@ var wuwei = function() {
 
         collidesWith(otherObj, dt) {
             // (we're defining missiles as thin, so the x checks are just
-            // vs the missle x.  i.e. cheating to make it easier)
+            // vs the missile x.  i.e. cheating to make it easier)
             var hit = null;
             if(otherObj.x + otherObj.minX <= this.x) {
                 if(otherObj.x + otherObj.maxX >= this.x) {
@@ -255,6 +263,10 @@ var wuwei = function() {
         }
 
         hitSky(dt) {
+            // hitting the sky loses points.  This effectively means
+            // the player loses points for missing.
+            this.credit(-3);
+
             this.destroyQuietly = true;
             super.hitSide();
         }
@@ -291,7 +303,7 @@ var wuwei = function() {
                 this.changeXThus = 0;
                 this.changeYThus = 0;
 
-                // hive mind teleports in to gloat:
+                // hive mind teleports in, to gloat:
                 this.x = field.clientWidth  / 2;
                 this.y = field.clientHeight / 2;
                 
@@ -391,6 +403,12 @@ var wuwei = function() {
                     this.x += this.master.changeXThus;
                     this.y += this.master.changeYThus;
                     this.master.learnAboutMinion(this, frameNum);
+
+                    // if we advanced, we get points according to
+                    // how close we are to the bottom.
+                    if(this.master.changeYThus) {
+                        this.credit(4 * this.y/invaderYStep);
+                    }
                 }
 
                 this.nextMoveMs = 500;
@@ -461,7 +479,7 @@ var wuwei = function() {
             game.players[this.id] = this;
 
             this.name = "Player " + game.players.count;
-            this.pointValue = Infinity;
+            this.pointValue = 5000;
         }
 
         draw(ctx) {
