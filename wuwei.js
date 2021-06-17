@@ -291,6 +291,7 @@ var wuwei = function() {
             this.changeYThus = 0;
             this.pointValue = Infinity;
             //this.name = "Hive Mind 0";
+            //this.name = "Take risks!";
             this.name = "侵略者";
 
             this.spawnMinions();
@@ -344,7 +345,7 @@ var wuwei = function() {
             var charHeight = field.clientHeight / fieldHeightChars;
             for(let iy = 1; iy < rows + 1; iy++) {
                 // each row basically fills the field with minions,
-                // space out one "char width", with a little space
+                // spaced out one "char width", with a little space
                 // on the left and slightly more on the right so they
                 // can move
                 for(let ix = 1; ix < fieldWidthChars - 2; ix += 2) {
