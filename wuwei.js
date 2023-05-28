@@ -283,10 +283,10 @@ var wuwei = function() {
     class HiveMind extends GameObj {
         constructor(x, y) {
             super('先生们，您所有的基地都属于我们', x, y);
+            this.acknowledgedOrders = 0;
             this.minInvaderX = Infinity;
             this.maxInvaderX = 0;
             this.lastReportedFrame = -1;
-            this.lastDescentOrderFrame = Infinity;
             this.changeXThus = invaderXStep;
             this.changeYThus = 0;
             this.pointValue = Infinity;
@@ -297,36 +297,24 @@ var wuwei = function() {
             this.spawnMinions();
         }
 
-        behave(dt, frameNum) {
+        commandMinions(dt, frameNum) {
 
-            if(game.invadersWon) {
-                // invaders stand and gloat:
-                this.changeXThus = 0;
-                this.changeYThus = 0;
+            // change direction and move down if an invader has/will
+            // hit a side of the field, or if there are no players left
+            // to thwart the invaders:
+            let changeDirection = 
+                (game.players.count == 0) ||
+                (this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) ||
+                (this.changeXThus + this.minInvaderX < invaderXMargin);
 
-                // hive mind teleports in, to gloat:
-                this.x = field.clientWidth  / 2;
-                this.y = field.clientHeight / 2;
+            if(changeDirection) {
+                this.changeXThus = -this.changeXThus;
+                this.changeYThus = invaderYStep;
             } else {
-                // change direction and move down if an invader has/will
-                // hit a side of the field, or if there are no players left
-                // to thwart the invaders:
-                let change_direction = 
-                    (game.players.count == 0) ||
-                    (this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) ||
-                    (this.changeXThus + this.minInvaderX < invaderXMargin);
-                if(change_direction) {
-                    this.changeXThus = -this.changeXThus;
-                    this.changeYThus = invaderYStep;
-                }
-            }
-
-            if(frameNum > this.lastDescentOrderFrame) {
                 this.changeYThus = 0;
-                this.lastDescentOrderFrame = Infinity;
             }
 
-            if(game.liveInvaders.count  === 0)
+            if(game.liveInvaders.count === 0)
                 this.spawnMinions();
 
             if(!this.nextRegroupCount)
@@ -340,6 +328,21 @@ var wuwei = function() {
                 for (let inv of Object.values(game.liveInvaders)) {
                     inv.nextShotMs = inv.reloadMs();
                 }
+            }
+        }
+
+        behave(dt, frameNum) {
+            if(game.invadersWon) {
+                // invaders stand and gloat:
+                this.changeXThus = 0;
+                this.changeYThus = 0;
+
+                // hive mind teleports in, to gloat:
+                this.x = field.clientWidth  / 2;
+                this.y = field.clientHeight / 2;
+            } else if(this.acknowledgedOrders >= game.liveInvaders.count) {
+                this.commandMinions(dt, frameNum);
+                this.acknowledgedOrders = 0;
             }
         }
 
@@ -369,15 +372,13 @@ var wuwei = function() {
                 this.lastReportedFrame = frameNum;
             }
 
-            if(this.changeYThus) {
-                this.lastDescentOrderFrame = frameNum;
-            }
-
             if(minion.x > this.maxInvaderX)
                 this.maxInvaderX = minion.x;
 
             if(minion.x < this.minInvaderX)
                 this.minInvaderX = minion.x;
+
+            this.acknowledgedOrders++;
         }
     }
 
