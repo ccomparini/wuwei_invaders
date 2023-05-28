@@ -188,11 +188,11 @@ var wuwei = function() {
         }
 
         collidesWith(otherObj, dt) {
-            // base objects don't collide, for now, let's say
-            // XXX actually better would be to implement precise
+            // base objects don't collide, for now, let's say.
+            // (actually, better would be to implement precise
             // collisions here, and let callers/subclasses
             // decide if they even need to call this based on
-            // other culling techniques
+            // other culling techniques)
             return null;
         }
 
@@ -246,7 +246,6 @@ var wuwei = function() {
                     // we're within the left/right boundaries.
                     // actually just checking x,y appears to be sufficient,
                     // at least if you have a good framerate!  cheating.
-                    // XXX fix/take into account dt
                     if(otherObj.y + otherObj.maxY >= this.y) {
                         if(otherObj.y + otherObj.minY <= this.y) {
                             hit = otherObj;
@@ -565,7 +564,6 @@ var wuwei = function() {
     }
 
     var showers = [ ];
-    var setters = [ ];  // XXX kill this
 
     // expands elements with "data-expand", creating one copy of the
     // element for each item in the group specified, and with data-scope
@@ -642,7 +640,6 @@ var wuwei = function() {
 
         return {
             element: elem,
-            // XXX rename containingObject
             containingObject: obj,
             variable: parts[parts.length - 1],
         };
@@ -744,7 +741,7 @@ var wuwei = function() {
         };
 
         socket.onopen = function (ev) {
-            socket.send('Hello Server!'); // XXX 
+            socket.send('Hello Server!');
         };
 
         return socket;
