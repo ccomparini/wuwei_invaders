@@ -307,13 +307,18 @@ var wuwei = function() {
                 // hive mind teleports in, to gloat:
                 this.x = field.clientWidth  / 2;
                 this.y = field.clientHeight / 2;
-                
-            } else if(this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) {
-                this.changeXThus = -this.changeXThus;
-                this.changeYThus = invaderYStep;
-            } else if(this.changeXThus + this.minInvaderX < invaderXMargin) {
-                this.changeXThus = -this.changeXThus;
-                this.changeYThus = invaderYStep;
+            } else {
+                // change direction and move down if an invader has/will
+                // hit a side of the field, or if there are no players left
+                // to thwart the invaders:
+                let change_direction = 
+                    (game.players.count == 0) ||
+                    (this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) ||
+                    (this.changeXThus + this.minInvaderX < invaderXMargin);
+                if(change_direction) {
+                    this.changeXThus = -this.changeXThus;
+                    this.changeYThus = invaderYStep;
+                }
             }
 
             if(frameNum > this.lastDescentOrderFrame) {
