@@ -63,7 +63,7 @@ var wuwei = function() {
     function cleanCtx() { // cache this?  can we?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
-        // everything in js is a fragile hack:
+        // use the default font but set the size:
         ctx.font = ctx.font.replace(/^\d+px/, fontSize);
         return ctx;
     }
@@ -777,7 +777,7 @@ var wuwei = function() {
             controls[39] = p2.moveRight.bind(p2); // 39 = right arrow
             //controls[32] = p2.shoot.bind(p2);     // 32 = ' '
             controls[38] = p2.shoot.bind(p2);     // 38 = up arrow
- */
+*/
 
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
