@@ -30,6 +30,8 @@ var wuwei = function() {
         }
     };
 
+    var keyControls = { }; // maps key code to control callback function
+
     const fontSize = "16px"; // 'cuz this looks good to me
     const fieldWidthChars  = 40;
     const fieldHeightChars = 24;
@@ -550,7 +552,7 @@ var wuwei = function() {
             }
         }
 
-        // controls:
+        // player controls:
         moveLeft(start) {
             this.isMoveLeft = start;
         }
@@ -576,7 +578,7 @@ var wuwei = function() {
     function dispatchKeyEvent(ev) {
         //console.log("key event " + ev.type + " " + ev.keyCode);
 
-        var func = controls[ev.keyCode];
+        var func = keyControls[ev.keyCode];
         if(func) func(ev.type === "keydown");
     }
 
@@ -781,43 +783,24 @@ var wuwei = function() {
 
             // we need at least one player:
             var p1 = new Player(field.clientWidth/3, field.clientHeight * .9);
-            controls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
-            controls[68] = p1.moveRight.bind(p1); // 68 = 'd'
-            controls[87] = p1.shoot.bind(p1);     // 87 = 'w'
-            controls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
-            controls[39] = p1.moveRight.bind(p1); // 39 = right arrow
-            controls[32] = p1.shoot.bind(p1);     // 32 = ' '
+            keyControls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
+            keyControls[68] = p1.moveRight.bind(p1); // 68 = 'd'
+            keyControls[87] = p1.shoot.bind(p1);     // 87 = 'w'
+            keyControls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
+            keyControls[39] = p1.moveRight.bind(p1); // 39 = right arrow
+            keyControls[32] = p1.shoot.bind(p1);     // 32 = ' '
 
 /*
             var p2 = new Player(field.clientWidth*2/3, field.clientHeight * .9);
-            controls[37] = p2.moveLeft.bind(p2);  // 37 = left arrow
-            controls[39] = p2.moveRight.bind(p2); // 39 = right arrow
-            //controls[32] = p2.shoot.bind(p2);     // 32 = ' '
-            controls[38] = p2.shoot.bind(p2);     // 38 = up arrow
+            keyControls[37] = p2.moveLeft.bind(p2);  // 37 = left arrow
+            keyControls[39] = p2.moveRight.bind(p2); // 39 = right arrow
+            //keyControls[32] = p2.shoot.bind(p2);     // 32 = ' '
+            keyControls[38] = p2.shoot.bind(p2);     // 38 = up arrow
 */
 
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
 
-            // ok so controls:
-            //  - need a way to show the user the key
-            //  - obvi bind them;  bindings should be exclusive though.
-            // more general case of settings:  let's say we make a set
-            // of settings available to the html layer and they can bind
-            // them to controls via .. some call.  maybe it can be in one
-            // bangarino, like they call one method with a big
-            // control -> setting list or something?  could be passed in
-            // here, actually.  Let's do that.  in settings.
-            //  what kind of controls do we need?
-            //  in order of importance, descending:
-            //  - scores... hmm is this a control?  I guess the way to
-            //    do this is have ... I guess it could just set the content.
-            //    actually, it might have to set the content.  think of it.
-            //    you might add a player.  ok so how about it duplicates
-            //    a score display.  ok you know, yes let's do that.
-            //  - debug checkbox - this is input
-            //  - difficulty
-            //
             // See also:
             //    https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements
             //
