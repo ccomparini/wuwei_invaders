@@ -62,7 +62,7 @@ var wuwei = function() {
         ctx.textAlign = "center";
         // the default fill style will be the css foreground color,
         // so that various things can use it for their draw color:
-        ctx.fillStyle = field.computedStyleMap().getAll("color")[0];
+        ctx.fillStyle = window.getComputedStyle(field).getPropertyValue("color");
         // use the default font but set the size:
         ctx.font = ctx.font.replace(/^\d+px/, fontSize);
 
@@ -80,7 +80,6 @@ var wuwei = function() {
         var oldFill = ctx.fillStyle;
 
         ctx.fillStyle = ctx.backgroundFill;
-        //ctx.fillStyle = field.computedStyleMap().getAll("background-color")[0];
         //ctx.fillStyle = "black";
         ctx.fillRect(0, 0, field.width, field.height);
         ctx.fillStyle = oldFill;
