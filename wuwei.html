@@ -1,5 +1,8 @@
 <html>
   <head>
+    <title>wuwei invaders</title>
+    <link rel="stylesheet" href="fbm.css">
+
     <meta name="keywords" content="Wu Wei,game,aliens,wasting time,text game,JS">
     <meta name="author" content="Chris Comparini">
     <meta name="copyright" content="Christopher Comparini">
@@ -29,6 +32,7 @@
       #playfield {
         grid-column: 2 / 3;
         grid-row: 2;
+        /* border-radius: 8%; */
       }
       #settings {
         grid-column: 3;
@@ -65,8 +69,8 @@
           <span data-shows="liveInvaders.count"> </span> 剩餘的侵略者
         </div>
       </span>
-      <span id="playfield" style="display: inline-block">
-      </span>
+      <canvas id="playfield">
+      </canvas>
       <span id="settings">
         <span id="controls">
           

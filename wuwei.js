@@ -40,22 +40,19 @@ var wuwei = function() {
     // this might be because I chose 60/sec.  go figure/revisit?
     const updateInterval = 60/1000;
 
-    function createField(container) {
-        container.style.position = "relative";
-        container.style.width  = fieldWidthChars + 'em';
-        container.style.height = fieldHeightChars + 'em';
-        container.style.backgroundColor = '#eeeeee';
-
-        field = document.createElement("canvas");
-        container.appendChild(field);
-
+    function initField(field) {
         field.style.cursor = "none";
-        field.style.width  = "100%";
-        field.style.height = "100%";
+        field.style.width  = fieldWidthChars + 'em';
+        field.style.height = fieldHeightChars + 'em';
 
-        // ...then set the internal size to match
+        // ... this sets the widths to pixel units which
+        // we use for rendering things the right size:
         field.width  = field.offsetWidth;
         field.height = field.offsetHeight;
+
+        // ... and, doing this here because if I do 8% in the css
+        // makes the witch/height radii different....
+        field.style['border-radius'] = `${0.08 * field.width}px`;
 
         return field;
     }
@@ -63,9 +60,30 @@ var wuwei = function() {
     function cleanCtx() { // cache this?  can we?
         var ctx = field.getContext('2d');
         ctx.textAlign = "center";
+        // the default fill style will be the css foreground color,
+        // so that various things can use it for their draw color:
+        ctx.fillStyle = field.computedStyleMap().getAll("color")[0];
         // use the default font but set the size:
         ctx.font = ctx.font.replace(/^\d+px/, fontSize);
+
+        let fill = ctx.createLinearGradient(
+            field.width*.2, 0, field.width, field.height*2
+        );
+        fill.addColorStop(0, "rgb(23, 23, 23)");
+        fill.addColorStop(1, "rgb(4, 4, 4)");
+        ctx.backgroundFill = fill;
+
         return ctx;
+    }
+
+    function clearScreen(ctx) {
+        var oldFill = ctx.fillStyle;
+
+        ctx.fillStyle = ctx.backgroundFill;
+        //ctx.fillStyle = field.computedStyleMap().getAll("background-color")[0];
+        //ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, field.width, field.height);
+        ctx.fillStyle = oldFill;
     }
 
     class GameObjStats {
@@ -752,7 +770,7 @@ var wuwei = function() {
         'play': function(setup) {
             //const server = serverSocket();
 
-            field = createField(setup.playfield);
+            field = initField(setup.playfield);
 
             // hiveMind creates and commands the invaders.
             // it stays off screen on planet x until the
@@ -821,7 +839,7 @@ var wuwei = function() {
                 // draw the game elements.  looks like we don't
                 // have to bother double buffering.  runs good
                 // on my machine, anyway!
-                ctx.clearRect(0, 0, field.width, field.height);
+                clearScreen(ctx);
                 for (let obj of Object.values(game.objects)) {
                     obj.draw(ctx);
                 }
