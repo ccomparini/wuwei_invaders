@@ -1,46 +1,18 @@
-
 /*
+    Old fashioned one-axis arcade style joystick.
 
-OK SO gamepads are polled anyway.  And I can't inherit from the
-builtin type.  etc etc.  Maybe just duck-type the virtual
-joystick to
+    Usage:
+       <script src="virtual-joystick.js"></script>
 
-One thing:  afaict there's no way to get it to be included in the
-navigator.getGamepads() array.  Ohwell.
-
-// https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
-// This is an old fashioned standup game style joystick,
-// so it only has (at most) 2 axes
-// It looks like I can't "new" a Gamepad object.  Not too
-// surprising.  Let's see if we can emulate one:
-//class VirtualGamepad extends Gamepad {
-class VirtualGamepad {
-  //constructor() { super(); }
-  // https://developer.mozilla.org/en-US/docs/Web/API/Gamepad
-  get axes() { return []; }
-
-
-  .buttons Read only
-An array of gamepadButton objects representing the buttons present on the device.
-
-
-  // OK weirdly, unlike every other input device,
-  // gamepads don't generate events.  You need to
-  // poll them.  Maybe that's how actual gamepad
-  // hardware works, in general?  I would think not,
-  // in this day and age, but ok..
-  update() {
-  }
-}
+       <virtual-joystick id="joystick-p1"> </virtual-joystick>
  */
+
 
 class VirtualJoystickElement extends HTMLElement {
 
   constructor() { super(); }
 
-  // ok go back to this, but maybe do the stick as an svg
-  // underlay?
-  initGraphics_pure_html() {
+  initGraphics() {
     // custom elements aren't supposed to muck with
     // children, in the normal sense.  but, they -can-
     // attach a "shadow root", which (as I understand
@@ -50,54 +22,9 @@ class VirtualJoystickElement extends HTMLElement {
     // cause weirdness outside this element.
     const shadowDOM = this.attachShadow({ mode: "open" });
 
-    const style = document.createElement("style");
-    style.textContent = `
-      .ball {
-        background-color: blue;
-        color: blue;
-        width: 500%;
-        aspect-ratio: 1 / 1;
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        top: 0;
-        left: 50%;
-        z-index: 5;
-      }
-      .stick {
-        width: 8%;
-        height: 100%;
-        background-color: #505050;
-        border-radius: 0 0 80% 80%;
-        color: #505050;
-        transform-origin: 50% 100%;
-        rotate: 23deg;
-        z-index: 3;
-      }
-      .slot {
-        color: black;
-        border: red 1px;
-        width: 100%;
-        height: 20%;
-        top: 100%;
-      }
-      .slot_front {
-        background-color: #ffffff;
-        border: #a0a0a0 3px;
-        height: 50%;
-        bottom: -10%;
-        width: 100%;
-        z-index: 4;
-      }
-      .slot_back {
-        background-color: #8f8f8f;
-        border-radius: 50vb 50vb 0 0;
-        border: #808080 3px;
-        height: 40%;
-        top: 0%;
-        width: 100%;
-        z-index: 2;
-      }
-    `;
+    this.innerStyle = document.createElement("style");
+    this.updateStyle();
+    shadowDOM.appendChild(this.innerStyle);
 
     const slot = document.createElement("span");
     const slot_back = document.createElement("span");
@@ -125,64 +52,70 @@ class VirtualJoystickElement extends HTMLElement {
     ball.style.position = "absolute";
     stick.appendChild(ball);
 
-    // OH LOOK:
-    // use this for ball, and, if possible, stick.
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/offset
-    // https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API/Keyframe_Formats
-    // OR NOT, because I can't figure out how to just set it to a particular
-    // point in the animation.  instead just rotate:
-    //  https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_transforms/Using_CSS_transforms
-    // ... YA know, the ball could be a child of the stick...
-
-    // can we move this up?
-    shadowDOM.appendChild(style);
     shadowDOM.appendChild(slot);
     shadowDOM.appendChild(stick);
-    //shadowDOM.appendChild(ball);
   }
 
-  initGraphics() {
-    // svg approach:
-    // .... actually this turns out to be terrible. complicated after all
-    // and harder for users to style.
-    const shadowDOM = this.attachShadow({ mode: "open" });
+  updateStyle() {
+    const existingStyle = window.getComputedStyle(this);
 
-    const svnNS = "http://www.w3.org/2000/svg";
-
-    const view = document.createElementNS(svnNS, "svg");
-    view.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
-    view.setAttribute('viewbox', '0 0 100% 100%');
-    view.setAttribute('width', '100%');
-    view.setAttribute('height', '100%');
-
-    const ball = document.createElementNS(svnNS, "circle");
-    ball.setAttribute("cx", "50%");
-    ball.setAttribute("cy", "0");
-    ball.setAttribute("r" , "12.5%");
-    ball.setAttribute('fill', '#2962ff');
-    view.appendChild(ball);
-
-/*
-<svg viewbox='0 0 400 400' xmlns='http://www.w3.org/2000/svg' height='60vmin' width='60vmin'>
-  <rect x='0' y='0' width='50%' height='50%' fill='tomato' opacity='0.75' />
-  <rect x='25%' y='25%' width='50%' height='50%' fill='slategrey' opacity='0.75' />
-  <rect x='50%' y='50%' width='50%' height='50%' fill='olive' opacity='0.75' />
-  <rect x='0' y='0' width='100%' height='100%' stroke='cadetblue' stroke-width='0.5%' fill='none' />
-</svg>
- */
-    shadowDOM.appendChild(view);
+    this.innerStyle.textContent = `
+      .ball {
+        background-color: red;
+        background-color: ${existingStyle.color};
+        width: 500%;
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        top: 0;
+        left: 50%;
+        z-index: 5;
+      }
+      .stick {
+        width: 8%;
+        height: 100%;
+        background-color: #505050;
+        border-radius: 0 0 80% 80%;
+        color: #505050;
+        transform-origin: 50% 100%;
+        rotate: 23deg;
+        z-index: 3;
+      }
+      .slot {
+        color: black;
+        width: 100%;
+        height: 20%;
+        top: 100%;
+      }
+      .slot_front {
+        background-color: #ffffff;
+        border: #a0a0a0 3px;
+        height: 50%;
+        bottom: -10%;
+        width: 100%;
+        z-index: 4;
+      }
+      .slot_back {
+        background-color: #8f8f8f;
+        border-radius: 50vb 50vb 0 0;
+        border: #808080 3px;
+        height: 40%;
+        top: 0%;
+        width: 100%;
+        z-index: 2;
+      }
+    `;
   }
 
   connectedCallback() {
     console.log("Custom element added to page.");
 
-//this.style.backgroundColor="red"; // debug
     this.style.minWidth  = "50px";
     this.style.minHeight = "30px";
     this.style.display   = 'inline-block';
-    this.initGraphics_pure_html();
+    this.initGraphics();
 
-    this.gamepad = new VirtualJoystickGamepad();
+    this.gamepad = new VirtualJoystickGamepad(this);
 /*
     this.dispatchEvent(
       // https://developer.mozilla.org/en-US/docs/Web/API/GamepadEvent/GamepadEvent
@@ -220,24 +153,57 @@ presumably this would fail, as well:
 
 window.customElements.define("virtual-joystick", VirtualJoystickElement);
 
+/*
+
+OK SO gamepads are polled anyway.  And I can't inherit from the
+builtin type.  etc etc.  Maybe just duck-type the virtual
+joystick to whatever the gamepad thing is.
+
+One thing:  afaict there's no way to get it to be included in the
+navigator.getGamepads() array.  Ohwell.
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
+// It looks like I can't "new" a Gamepad object.  Not too
+// surprising.  Let's see if we can emulate one:
+//class VirtualGamepad extends Gamepad {
+class VirtualGamepad {
+  //constructor() { super(); }
+  // https://developer.mozilla.org/en-US/docs/Web/API/Gamepad
+  get axes() { return []; }
+
+
+  .buttons Read only
+An array of gamepadButton objects representing the buttons present on the device.
+
+
+  // OK weirdly, unlike every other input device,
+  // gamepads don't generate events.  You need to
+  // poll them.  Maybe that's how actual gamepad
+  // hardware works nowadays, in general?  except
+  // I would think the underlying usb or bluetooth
+  // or whatever must be event-driven.  Anwyayaaa.a.
+  update() {
+  }
+}
+ */
 // Gamepad emulation:
 // https://developer.mozilla.org/en-US/docs/Web/API/Gamepad
 // https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
 class VirtualJoystickGamepad {
 
-  constructor() {
-    
+  constructor(el) {
+    this.htmlElement = el;
   }
 
-  // I'm skipping all experimental/nonstandard attributes.
+  // For now, for simplicity, I'm skipping all experimental/nonstandard
+  // attributes.
   get axes()      { return []; }
   get buttons()   { return []; }
   get connected() { return true; }
-  get id()        { return `virtual-`; }
+  get id()        { return `virtual-${htmlElement.id}`; }
   get index()     { return false; }
   get mapping()   { return false; }
   get timestamp() { return perfomance.now(); }
-  
   // end Gamepad emulation
 }
 
