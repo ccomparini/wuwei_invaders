@@ -12,7 +12,32 @@
 
 class VirtualJoystickElement extends HTMLElement {
 
-  #subClasses = [ ];   // this really needed?
+  #subClasses = [ ];   // shortcut to classes of subelements
+  #stick;              // shortcut to "stick" element
+
+  #xPosition = 0;      // range -1.0 to 1.0
+  #maxSwing  = 45;     // degrees, +- of center
+
+  get xPos() {
+    return xPosition;
+  }
+
+  set xPos(newX) {
+    this.#xPosition = newX;
+    // let's say we limit the joystick's swing to +- 45deg
+    // .. relative to the center.. hmm should be configurable.
+    //this.#stick.style.setProperty('rotate', `${this.#maxSwing * newX/bounds.width}deg`);
+    this.#stick.style.setProperty('rotate', `${45 * newX}deg`);
+  }
+
+  // set "client" relative x position:
+  set xPosClient(clientX) {
+    let bounds = this.getBoundingClientRect();
+    if(clientX < bounds.x) clientX = bounds.x;
+    if(clientX > bounds.right) clientX = bounds.right;
+    let relativeX = clientX - (bounds.x + bounds.width/2);
+    this.xPos = relativeX/bounds.width;
+  }
 
   constructor() { super(); }
 
@@ -36,19 +61,13 @@ class VirtualJoystickElement extends HTMLElement {
 
     const stick = this.createComponentElement("stick");
     const ball  = this.createComponentElement("ball");
-/*
-    ball.addEventListener("drag", (ev) => {
-// doesn't happen?
-      console.log(`CAN HAS DRAG: ${ev}`);
-    });
- */
     stick.appendChild(ball);
 
     shadowDOM.appendChild(slot);
     shadowDOM.appendChild(stick);
     this.updateStyle();
 
-    this.stick = stick;
+    this.#stick = stick;
   }
 
   setDefaultStyle(el) {
@@ -108,7 +127,6 @@ class VirtualJoystickElement extends HTMLElement {
     el.style.position = "relative";
 
     this.#subClasses.push(elClass);
-
 
     return el;
   }
@@ -171,27 +189,16 @@ class VirtualJoystickElement extends HTMLElement {
     this.style.display   = 'inline-block';
     this.initGraphics();
 
-/*
-    this.addEventListener("mouseenter", (ev) => {
-      console.log("CAN HAS MOUSE ENTERED");
-      this.style.setProperty('background-color', 'orange');
-    });
- */
-
     var self = this;
-    let touchHandler = function(ev) {
 
-      console.log("CAN HAS TOUCH");
+    this.addEventListener("mousemove", (ev) => {
+      self.xPosClient = ev.clientX;
+    });
+
+    let touchHandler = function(ev) {
       if(ev.targetTouches) {
         if(ev.targetTouches.length >= 1) {
-          let bounds = self.getBoundingClientRect();
-          let touchX = ev.targetTouches.item(0).clientX;
-          if(touchX < bounds.x) touchX = bounds.x;
-          if(touchX > bounds.right) touchX = bounds.right;
-          // let's say we limit the joystick's swing to +- 45deg
-          // .. relative to the center.. hmm should be configurable.
-          let relativeX = touchX - (bounds.x + bounds.width/2);
-          self.stick.style.setProperty('rotate', `${45 * relativeX/bounds.width}deg`);
+          self.xPosClient = ev.targetTouches.item(0).clientX;
           ev.preventDefault(); 
         }
       }
