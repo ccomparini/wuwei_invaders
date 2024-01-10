@@ -30,7 +30,11 @@ var wuwei = function() {
         }
     };
 
-    var keyControls = { }; // maps key code to control callback function
+
+// XXX move this to joystick/other controllers.
+// They can each a key map (such as this) which could be set
+// or passed in in the constructor.
+    const keyControls = { }; // maps key code to control callback function
 
     const fontSize = "16px"; // 'cuz this looks good to me
     const fieldWidthChars  = 40;
@@ -53,7 +57,7 @@ var wuwei = function() {
         field.height = field.offsetHeight;
 
         // ... and, doing this here because if I do 8% in the css
-        // makes the witch/height radii different....
+        // it makes the width/height radii different....
         field.style['border-radius'] = `${0.08 * field.width}px`;
 
         return field;
@@ -82,7 +86,6 @@ var wuwei = function() {
         var oldFill = ctx.fillStyle;
 
         ctx.fillStyle = ctx.backgroundFill;
-        //ctx.fillStyle = "black";
         ctx.fillRect(0, 0, field.width, field.height);
         ctx.fillStyle = oldFill;
     }
@@ -309,7 +312,6 @@ var wuwei = function() {
             this.changeYThus = 0;
             this.pointValue = Infinity;
             //this.name = "Hive Mind 0";
-            //this.name = "Take risks!";
             this.name = "侵略者";
 
             this.spawnMinions();
@@ -499,10 +501,12 @@ var wuwei = function() {
     }
 
     class Player extends GameObj {
-        constructor(x, y) {
+// actually attach controller later (?)
+        constructor(controller, x, y) {
             super("🙏", x, y);
             game.players[this.id] = this;
 
+            this.controller = controller;
             this.name = "Player " + game.players.count;
             this.pointValue = 5000;
         }
@@ -516,7 +520,11 @@ var wuwei = function() {
             if(this.destroyed)
                 return;
 
-            if(this.isMoveRight && this.isMoveLeft) { // wtb xor
+            if(this.controller) {
+                // (making a bit of a guess here as to what game controllers
+                // look like)
+                this.dx = this.controller.axes[0] * game.settings.playerSpeed;
+            } else if(this.isMoveRight && this.isMoveLeft) {
                 this.dx = 0;
             } else if(this.isMoveRight) {
                 this.dx = game.settings.playerSpeed;
@@ -554,11 +562,19 @@ var wuwei = function() {
 
         // player controls:
         moveLeft(start) {
-            this.isMoveLeft = start;
+            if(start) {
+                this.dx = -game.settings.playerSpeed;
+            } else {
+                this.dx = 0;
+            }
         }
 
         moveRight(start) {
-            this.isMoveRight = start;
+            if(start) {
+                this.dx = game.settings.playerSpeed;
+            } else {
+                this.dx = 0;
+            }
         }
 
         shoot(keyDown) {
@@ -588,6 +604,8 @@ var wuwei = function() {
     // element for each item in the group specified, and with data-scope
     // set to the corresponding item in the group.
     function expandElements(protoElement, scope) {
+        if(!protoElement) return;
+
         let dataset = protoElement.dataset || { };
         let expand = dataset.expand;
 
@@ -674,6 +692,7 @@ var wuwei = function() {
     }
 
     function bindDisplay(display, scope) {
+        if(!display) return;
         if(!display.dataset) return;
 
         scope = rescope(display, scope);
@@ -782,7 +801,13 @@ var wuwei = function() {
             game.hiveMind = new HiveMind(0, -10000); 
 
             // we need at least one player:
-            var p1 = new Player(field.clientWidth/3, field.clientHeight * .9);
+            const playerYPos = field.clientHeight * .9;
+            const p1 = new Player(
+                setup.controllers[0], field.clientWidth/3, playerYPos
+                //field.clientWidth/3, playerYPos
+            );
+
+// XXX move to controllers:
             keyControls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
             keyControls[68] = p1.moveRight.bind(p1); // 68 = 'd'
             keyControls[87] = p1.shoot.bind(p1);     // 87 = 'w'

@@ -8,17 +8,20 @@
     <meta name="copyright" content="Christopher Comparini">
     <meta name="description" content="Wu Wei invaders">
     <meta name="category" content="games">
+    <script src="virtual-joystick.js"></script>
     <style type="text/css">
       div {
         background-color: "#ffffff";
-        color: "red";
+        /*color: "red"; */
       }
       #stage {
         text-align: center;
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         grid-gap: 2px;
         grid-auto-rows: minmax(100px, auto);
+        width: 100%;
+        border: 10%;
       }
       #title {
         font-size: xxx-large;
@@ -30,13 +33,31 @@
         grid-row: 2;
       }
       #playfield {
-        grid-column: 2 / 3;
+        column-count: 3;
+        grid-column: 2 / 5;
         grid-row: 2;
         /* border-radius: 8%; */
       }
       #settings {
         grid-column: 3;
         grid-row: 2;
+      }
+      #joystick-p1 {
+        width: 250px;
+        height: 140px;
+/*
+        --ball: radial-gradient(#000000, #00ff2f); 
+        --slot: red;
+        --slot-back: purple;
+        --slot-front: purple;
+        --ball-border-radius: 0;
+        --stick: radial-gradient(#000000, #ffffff); 
+        --ball-border: green 10px;
+ */
+      }
+      #controls {
+        grid-column: 3 / 5;
+        grid-row: 3;
       }
       .player-name {
         border: none;
@@ -59,6 +80,7 @@
         <div id="score-player" data-expand="players">
           <span data-controls="name" contenteditable></span>:
           <span data-shows="stats.score"> </span>
+          <div data-shows="controller.xPos"> </div>
         </div>
         <div id="score-hive-mind" data-scope="hiveMind">
           <span data-shows="name"> </span>:
@@ -71,11 +93,9 @@
       </span>
       <canvas id="playfield">
       </canvas>
-      <span id="settings">
-        <span id="controls">
-          
-        </span>
-      </span>
+      <div id="controls" align="center">
+        <virtual-joystick id="joystick-p1"> </virtual-joystick>
+      </div>
     </div>
   </body>
   <script src="wuwei.js"></script>
@@ -84,7 +104,12 @@
       playfield:  document.getElementById("playfield"),
       displays: [
         document.getElementById("scoreboard"),
-      ]
+        //document.getElementById("settings"),
+      ],
+      controllers: [
+         document.getElementById("joystick-p1")
+      ],
     });
+
   </script>
 </html>

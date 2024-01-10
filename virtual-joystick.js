@@ -2,9 +2,11 @@
     Old fashioned one-axis arcade style joystick.
 
     Usage:
+       
        <script src="virtual-joystick.js"></script>
 
        <virtual-joystick id="joystick-p1"> </virtual-joystick>
+       <virtual-joystick id="joystick-p2"> </virtual-joystick>
 
     Styling: XXX fill in
  */
@@ -15,11 +17,12 @@ class VirtualJoystickElement extends HTMLElement {
   #subClasses = [ ];   // shortcut to classes of subelements
   #stick;              // shortcut to "stick" element
 
+// XXX possibly make these data elements?
   #xPosition = 0;      // range -1.0 to 1.0
   #maxSwing  = 45;     // degrees, +- of center
 
   get xPos() {
-    return xPosition;
+    return this.#xPosition;
   }
 
   set xPos(newX) {
@@ -36,7 +39,13 @@ class VirtualJoystickElement extends HTMLElement {
     if(clientX < bounds.x) clientX = bounds.x;
     if(clientX > bounds.right) clientX = bounds.right;
     let relativeX = clientX - (bounds.x + bounds.width/2);
-    this.xPos = relativeX/bounds.width;
+    // 2* because it's in the range [-1.0, 1.0] and not +-0.5
+    this.xPos = 2 * relativeX/bounds.width;
+  }
+
+  get axes() {
+    // we're a one-axis controller.
+    return [ this.xPos ];
   }
 
   constructor() { super(); }
@@ -136,12 +145,12 @@ class VirtualJoystickElement extends HTMLElement {
 
     // https://www.w3.org/TR/CSS2/cascade.html#cascading-order
 
-    // The idea here is this:
-    //   Style for sub props can be set using custom properties,
-    //  like this:
+    // The idea here is style for sub props can be set using
+    //  custom properties, like this:
     //  --[sub class]-[real css property] = [real css value]
     // For example, to set a green border on the ball for the virtual
     // joystick with id #joystick-1, you could do:
+// XXX this is fail:
     // #joystick-1 {
     //   --ball-border: green 10px;
     // }
@@ -192,6 +201,14 @@ class VirtualJoystickElement extends HTMLElement {
     var self = this;
 
     this.addEventListener("mousemove", (ev) => {
+      self.xPosClient = ev.clientX;
+    });
+
+    this.addEventListener("mouseenter", (ev) => {
+      self.xPosClient = ev.clientX;
+    });
+
+    this.addEventListener("mouseleave", (ev) => {
       self.xPosClient = ev.clientX;
     });
 
@@ -289,7 +306,7 @@ class VirtualJoystickGamepad {
 
   // For now, for simplicity, I'm skipping all experimental/nonstandard
   // attributes.
-  get axes()      { return []; }
+  get axes()      { return [ 0 ]; } // XXX wat
   get buttons()   { return []; }
   get connected() { return true; }
   get id()        { return `virtual-${htmlElement.id}`; }
