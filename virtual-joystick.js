@@ -23,7 +23,7 @@ class VirtualJoystickElement extends HTMLElement {
 // XXX possibly make these data elements?
 // actually we need an array of axes regardless
   #xPosition = 0;      // range -1.0 to 1.0
-  #maxSwing  = 45;     // degrees, +- of center
+  #maxSwing  = 23.44;  // degrees, +- of center
 
   get xPos() {
     return this.#xPosition;
@@ -63,15 +63,19 @@ class VirtualJoystickElement extends HTMLElement {
   init() {
     // configuration:
     //   data-max-swing
-    //   data-
+    //   data-key-left
+    //   data-key-right
     // .. huh we could add axes here.  data-num-axes
     if(typeof this.dataset.maxSwing !== 'undefined') {
       this.#maxSwing = this.dataset.maxSwing;
     }
     // key controls!  
-
-this.addKeyControl("ArrowLeft", 0, -1.0);
-this.addKeyControl("ArrowRight", 0, 1.0);
+    if(typeof this.dataset.keyLeft !== 'undefined') {
+        this.addKeyControl(this.dataset.keyLeft, 0, -1.0);
+    }
+    if(typeof this.dataset.keyRight !== 'undefined') {
+        this.addKeyControl(this.dataset.keyRight, 0, 1.0);
+    }
 
     // key events are getten from the whole window so that
     // we don't have to worry about if the joystick has
