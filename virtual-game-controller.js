@@ -14,26 +14,24 @@
  */
 
 
-class VirtualJoystickElement extends HTMLElement {
+class VirtualGameController extends HTMLElement {
 
   #subClasses = [ ];   // shortcut to classes of subelements
   #stick;              // shortcut to "stick" element
 
+  // key handling
   #keyDispatch;
   #keyControls = { };
 
-// XXX possibly make these data elements?
-// actually we need an array of axes regardless
-  #xPosition = 0;      // range -1.0 to 1.0
+  #axes = [ 0 ];
   #maxSwing  = 23.44;  // degrees, +- of center
 
   get xPos() {
-    return this.#xPosition;
+    return this.#axes[0];
   }
 
   set xPos(newX) {
-    this.#xPosition = newX;
-    this.#stick.style.setProperty('rotate', `${this.#maxSwing * newX}deg`);
+    this.setAxis(0, newX);
   }
 
   // Set "client" relative x position.  Use this for converting
@@ -55,8 +53,11 @@ class VirtualJoystickElement extends HTMLElement {
   }
 
   setAxis(axis, val) {
-// XXX do other axes
-    this.xPos = val;
+    this.#axes[axis] = val;
+
+    if(axis == 0) {
+      this.#stick.style.setProperty('rotate', `${this.#maxSwing * val}deg`);
+    }
   }
 
   constructor() { super(); }
@@ -290,6 +291,9 @@ class VirtualJoystickElement extends HTMLElement {
       }
     }
   }
+}
+
+class VirtualJoystickElement extends VirtualGameController {
 }
 
 window.customElements.define("virtual-joystick", VirtualJoystickElement);
