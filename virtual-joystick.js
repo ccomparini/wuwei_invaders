@@ -9,6 +9,8 @@
        <virtual-joystick id="joystick-p2"> </virtual-joystick>
 
     Styling: XXX fill in
+
+    data-XXX fill in
  */
 
 
@@ -31,12 +33,11 @@ class VirtualJoystickElement extends HTMLElement {
 
   set xPos(newX) {
     this.#xPosition = newX;
-    // let's say we limit the joystick's swing to +- 45deg
-    // .. relative to the center.. hmm should be configurable.
     this.#stick.style.setProperty('rotate', `${this.#maxSwing * newX}deg`);
   }
 
-  // set "client" relative x position:
+  // Set "client" relative x position.  Use this for converting
+  // (eg) mouse event positions to appropriate joystick positions.
   set xPosClient(clientX) {
     let bounds = this.getBoundingClientRect();
     if(clientX < bounds.x) clientX = bounds.x;
@@ -284,7 +285,7 @@ class VirtualJoystickElement extends HTMLElement {
     this.#keyControls[keyname] = function(keyDown) {
       if(keyDown) {
         self.setAxis(axis, value);
-      } else {
+      } else if(axes[axis] == value) {
         self.setAxis(axis, 0);
       }
     }
