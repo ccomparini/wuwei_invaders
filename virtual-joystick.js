@@ -60,7 +60,8 @@ class VirtualJoystickElement extends HTMLElement {
 
   constructor() { super(); }
 
-  init() {
+  // initialize from html-level data-xxx attributes
+  initFromDataConfig() {
     // configuration:
     //   data-max-swing
     //   data-key-left
@@ -77,19 +78,13 @@ class VirtualJoystickElement extends HTMLElement {
         this.addKeyControl(this.dataset.keyRight, 0, 1.0);
     }
 
-    // key events are getten from the whole window so that
-    // we don't have to worry about if the joystick has
-    // focus.
-    const self = this;
-    function dispatchKeyEvent(ev) {
-        var func = self.#keyControls[ev.code];
-        if(func) func(ev.type === "keydown");
-    }
-    window.addEventListener('keyup',   dispatchKeyEvent, false);
-    window.addEventListener('keydown', dispatchKeyEvent, false);
   }
 
   initGraphics() {
+    this.style.minWidth  = "50px";
+    this.style.minHeight = "30px";
+    this.style.display   = 'inline-block';
+
     // custom elements aren't supposed to muck with
     // children, in the normal sense.  but, they -can-
     // attach a "shadow root", which (as I understand
@@ -231,12 +226,8 @@ class VirtualJoystickElement extends HTMLElement {
 
   connectedCallback() {
     // called when added to page
-// XXX another init function?  reorganize
-    this.init();
+    this.initFromDataConfig();
 
-    this.style.minWidth  = "50px";
-    this.style.minHeight = "30px";
-    this.style.display   = 'inline-block';
     this.initGraphics();
 
     var self = this;
@@ -265,6 +256,13 @@ class VirtualJoystickElement extends HTMLElement {
     this.addEventListener("touchstart", touchHandler);
     this.addEventListener("touchmove",  touchHandler);
     this.addEventListener("touchend",   touchHandler);
+
+    function dispatchKeyEvent(ev) {
+        var func = self.#keyControls[ev.code];
+        if(func) func(ev.type === "keydown");
+    }
+    window.addEventListener('keyup',   dispatchKeyEvent, false);
+    window.addEventListener('keydown', dispatchKeyEvent, false);
   }
 
   disconnectedCallback() {
