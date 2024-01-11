@@ -17,7 +17,11 @@ class VirtualJoystickElement extends HTMLElement {
   #subClasses = [ ];   // shortcut to classes of subelements
   #stick;              // shortcut to "stick" element
 
+  #keyDispatch;
+  #keyControls = { };
+
 // XXX possibly make these data elements?
+// actually we need an array of axes regardless
   #xPosition = 0;      // range -1.0 to 1.0
   #maxSwing  = 45;     // degrees, +- of center
 
@@ -29,8 +33,7 @@ class VirtualJoystickElement extends HTMLElement {
     this.#xPosition = newX;
     // let's say we limit the joystick's swing to +- 45deg
     // .. relative to the center.. hmm should be configurable.
-    //this.#stick.style.setProperty('rotate', `${this.#maxSwing * newX/bounds.width}deg`);
-    this.#stick.style.setProperty('rotate', `${45 * newX}deg`);
+    this.#stick.style.setProperty('rotate', `${this.#maxSwing * newX}deg`);
   }
 
   // set "client" relative x position:
@@ -43,12 +46,44 @@ class VirtualJoystickElement extends HTMLElement {
     this.xPos = 2 * relativeX/bounds.width;
   }
 
+  // This is intended to work the same as Gamepad.axes
+  //  https://developer.mozilla.org/en-US/docs/Web/API/Gamepad/axes
   get axes() {
     // we're a one-axis controller.
     return [ this.xPos ];
   }
 
+  setAxis(axis, val) {
+// XXX do other axes
+    this.xPos = val;
+  }
+
   constructor() { super(); }
+
+  init() {
+    // configuration:
+    //   data-max-swing
+    //   data-
+    // .. huh we could add axes here.  data-num-axes
+    if(typeof this.dataset.maxSwing !== 'undefined') {
+      this.#maxSwing = this.dataset.maxSwing;
+    }
+    // key controls!  
+
+this.addKeyControl("ArrowLeft", 0, -1.0);
+this.addKeyControl("ArrowRight", 0, 1.0);
+
+    // key events are getten from the whole window so that
+    // we don't have to worry about if the joystick has
+    // focus.
+    const self = this;
+    function dispatchKeyEvent(ev) {
+        var func = self.#keyControls[ev.code];
+        if(func) func(ev.type === "keydown");
+    }
+    window.addEventListener('keyup',   dispatchKeyEvent, false);
+    window.addEventListener('keydown', dispatchKeyEvent, false);
+  }
 
   initGraphics() {
     // custom elements aren't supposed to muck with
@@ -192,6 +227,8 @@ class VirtualJoystickElement extends HTMLElement {
 
   connectedCallback() {
     // called when added to page
+// XXX another init function?  reorganize
+    this.init();
 
     this.style.minWidth  = "50px";
     this.style.minHeight = "30px";
@@ -224,31 +261,11 @@ class VirtualJoystickElement extends HTMLElement {
     this.addEventListener("touchstart", touchHandler);
     this.addEventListener("touchmove",  touchHandler);
     this.addEventListener("touchend",   touchHandler);
-
-    this.gamepad = new VirtualJoystickGamepad(this);
-/*
-    this.dispatchEvent(
-      // https://developer.mozilla.org/en-US/docs/Web/API/GamepadEvent/GamepadEvent
-ok this fails radically:
-Uncaught TypeError: Failed to construct 'GamepadEvent': Failed to read the 'gamepad' property from 'GamepadEventInit': Failed to convert value to 'Gamepad'.
-    at VirtualJoystickElement.connectedCallback (virtual-joystick.js:92:7)
-connectedCallback @ virtual-joystick.js:92
-      new GamepadEvent("gamepadconnected", {
-        gamepad: this.gamepad
-      })
-    );
- */
   }
 
   disconnectedCallback() {
-    //console.log(`Joystick ${this} removed from page.`);
-
-/*
-presumably this would fail, as well:
-    new GamepadEvent("gamepaddisconnected", {
-      gamepad: this.gamepad
-    })
- */
+    // XXX kill event listeners here
+    //  https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener
   }
 
   adoptedCallback() {
@@ -258,61 +275,19 @@ presumably this would fail, as well:
   attributeChangedCallback(name, oldValue, newValue) {
     console.log(`Joystick attribute ${name} has changed from '${oldValue}' to '${newValue}'`);
   }
+  // end HTMLElement handlers
+
+  addKeyControl(keyname, axis, value) {
+    const self = this;
+    this.#keyControls[keyname] = function(keyDown) {
+      if(keyDown) {
+        self.setAxis(axis, value);
+      } else {
+        self.setAxis(axis, 0);
+      }
+    }
+  }
 }
 
 window.customElements.define("virtual-joystick", VirtualJoystickElement);
-
-/*
-
-OK SO gamepads are polled anyway.  And I can't inherit from the
-builtin type.  etc etc.  Maybe just duck-type the virtual
-joystick to whatever the gamepad thing is.
-
-One thing:  afaict there's no way to get it to be included in the
-navigator.getGamepads() array.  Ohwell.
-
-// https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
-// It looks like I can't "new" a Gamepad object.  Not too
-// surprising.  Let's see if we can emulate one:
-//class VirtualGamepad extends Gamepad {
-class VirtualGamepad {
-  //constructor() { super(); }
-  // https://developer.mozilla.org/en-US/docs/Web/API/Gamepad
-  get axes() { return []; }
-
-
-  .buttons Read only
-An array of gamepadButton objects representing the buttons present on the device.
-
-
-  // OK weirdly, unlike every other input device,
-  // gamepads don't generate events.  You need to
-  // poll them.  Maybe that's how actual gamepad
-  // hardware works nowadays, in general?  except
-  // I would think the underlying usb or bluetooth
-  // or whatever must be event-driven.  Anwyayaaa.a.
-  update() {
-  }
-}
- */
-// Gamepad emulation:
-// https://developer.mozilla.org/en-US/docs/Web/API/Gamepad
-// https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
-class VirtualJoystickGamepad {
-
-  constructor(el) {
-    this.htmlElement = el;
-  }
-
-  // For now, for simplicity, I'm skipping all experimental/nonstandard
-  // attributes.
-  get axes()      { return [ 0 ]; } // XXX wat
-  get buttons()   { return []; }
-  get connected() { return true; }
-  get id()        { return `virtual-${htmlElement.id}`; }
-  get index()     { return false; }
-  get mapping()   { return false; }
-  get timestamp() { return perfomance.now(); }
-  // end Gamepad emulation
-}
 

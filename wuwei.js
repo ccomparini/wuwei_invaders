@@ -34,6 +34,8 @@ var wuwei = function() {
 // XXX move this to joystick/other controllers.
 // They can each a key map (such as this) which could be set
 // or passed in in the constructor.
+
+
     const keyControls = { }; // maps key code to control callback function
 
     const fontSize = "16px"; // 'cuz this looks good to me
