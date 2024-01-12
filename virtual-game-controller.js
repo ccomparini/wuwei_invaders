@@ -5,8 +5,12 @@
        
        <script src="virtual-joystick.js"></script>
 
+     one axis joysticks:
        <virtual-joystick id="joystick-p1"> </virtual-joystick>
-       <virtual-joystick id="joystick-p2"> </virtual-joystick>
+       <virtual-joystick id="joystick-p2"> </virtual-joystick>S
+
+     two axis:
+       <virtual-joystick id="joystick" data-axis-count=2> </virtual-joystick>
 
     Styling: XXX fill in
 
@@ -18,32 +22,36 @@ class VirtualGameController extends HTMLElement {
 
   #subClasses = [ ];   // shortcut to classes of subelements
   #stick;              // shortcut to "stick" element
+  #ball;               // shortcut to "ball" element
 
   #keyControls = { }; // key event.code() -> handler function
 
   #axes = [ 0 ];
   #maxSwing  = 23.44;  // degrees, +- of center on x axis
+  #yRangePct = 100;     // % of container +- start position
 
   get xPos() {
     return this.#axes[0];
   }
 
-  set xPos(newX) {
-    this.setAxis(0, newX);
+  get yPos() {
+    return this.#axes[1];
   }
 
-  // Set "client" relative x position.  Use this for converting
-  // (eg) mouse event positions to appropriate joystick positions.
-  set xPosClient(clientX) {
+  setClientPos(clientX, clientY) {
     let bounds = this.getBoundingClientRect();
     if(clientX < bounds.x) clientX = bounds.x;
     if(clientX > bounds.right) clientX = bounds.right;
-    let relativeX = clientX - (bounds.x + bounds.width/2);
-    // 2* because it's in the range [-1.0, 1.0] and not +-0.5
-    this.xPos = 2 * relativeX/bounds.width;
-  }
 
-  set yPosClient(clientY) {
+    if(clientY < bounds.y)      clientY = bounds.y;
+    if(clientY > bounds.bottom) clientY = bounds.bottom;
+
+    let relativeX = clientX - (bounds.x + bounds.width/2);
+    let relativeY = clientY - (bounds.y + bounds.height/2);
+
+    // 2* because we present range [-1.0 1.0] and not [-0.5 0.5]
+    this.setAxis(0, 2 * relativeX/bounds.width);
+    this.setAxis(1, 2 * relativeY/bounds.height);
   }
 
   // This is intended to work the same as Gamepad.axes
@@ -53,10 +61,17 @@ class VirtualGameController extends HTMLElement {
   }
 
   setAxis(axis, val) {
-    this.#axes[axis] = val;
-
-    if(axis == 0) {
-      this.#stick.style.setProperty('rotate', `${this.#maxSwing * val}deg`);
+    if(axis < this.#axes.length) {
+      this.#axes[axis] = val;
+      switch(axis) {
+        case 0:
+          this.#stick.style.setProperty('rotate', `${this.#maxSwing * val}deg`);
+          break;
+        case 1:
+          this.#stick.style.setProperty('translateY', `${this.#yRangePct * val}%`);
+          this.#stick.style.setProperty('transform', `translateY(${this.#yRangePct * val}%)`);
+          break;
+      };
     }
   }
 
@@ -87,14 +102,19 @@ class VirtualGameController extends HTMLElement {
   initFromDataConfig() {
     // configuration:
     //   data-axis-count
-    //   data-max-swing
+    //   data-max-swing XXX
+    //   data-y-range-pct
     //   data-key-left
     //   data-key-right
     if(typeof this.dataset.axisCount !== 'undefined') {
       this.initAxes(this.dataset.axisCount);
     }
     if(typeof this.dataset.maxSwing !== 'undefined') {
+//  XXX change to data-x-range-degrees
       this.#maxSwing = this.dataset.maxSwing;
+    }
+    if(typeof this.dataset.yRangePct !== 'undefined') {
+      this.#yRangePct = this.dataset.yRangePct;
     }
     // key controls!  
     if(typeof this.dataset.keyLeft !== 'undefined') {
@@ -128,15 +148,14 @@ class VirtualGameController extends HTMLElement {
     slot.appendChild(slot_back);
     slot.appendChild(slot_front);
 
-    const stick = this.createComponentElement("stick");
-    const ball  = this.createComponentElement("ball");
-    stick.appendChild(ball);
+    this.#stick = this.createComponentElement("stick");
+    this.#ball  = this.createComponentElement("ball");
+    this.#stick.appendChild(this.#ball);
 
     shadowDOM.appendChild(slot);
-    shadowDOM.appendChild(stick);
+    shadowDOM.appendChild(this.#stick);
     this.updateStyle();
 
-    this.#stick = stick;
   }
 
   setDefaultStyle(el) {
@@ -160,7 +179,6 @@ class VirtualGameController extends HTMLElement {
         border-radius: 0 0 80% 80%;
         color: #505050;
         transform-origin: 50% 100%;
-        /*rotate: 23deg; */
         z-index: 3;
       }
       .slot {
@@ -259,8 +277,7 @@ class VirtualGameController extends HTMLElement {
     var self = this;
 
     let mousehandler = function(ev) {
-      self.xPosClient = ev.clientX;
-      self.yPosClient = ev.clientY;
+      self.setClientPos(ev.clientX, ev.clientY);
     }
 
     this.addEventListener("mousemove",  mousehandler);
@@ -270,7 +287,7 @@ class VirtualGameController extends HTMLElement {
     let touchHandler = function(ev) {
       if(ev.targetTouches) {
         if(ev.targetTouches.length >= 1) {
-          self.xPosClient = ev.targetTouches.item(0).clientX;
+          self.setClientPos(ex.clientX, ev.clientY);
           ev.preventDefault(); 
         }
       }
