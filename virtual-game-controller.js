@@ -19,12 +19,10 @@ class VirtualGameController extends HTMLElement {
   #subClasses = [ ];   // shortcut to classes of subelements
   #stick;              // shortcut to "stick" element
 
-  // key handling
-  #keyDispatch;
-  #keyControls = { };
+  #keyControls = { }; // key event.code() -> handler function
 
   #axes = [ 0 ];
-  #maxSwing  = 23.44;  // degrees, +- of center
+  #maxSwing  = 23.44;  // degrees, +- of center on x axis
 
   get xPos() {
     return this.#axes[0];
@@ -45,11 +43,13 @@ class VirtualGameController extends HTMLElement {
     this.xPos = 2 * relativeX/bounds.width;
   }
 
+  set yPosClient(clientY) {
+  }
+
   // This is intended to work the same as Gamepad.axes
   //  https://developer.mozilla.org/en-US/docs/Web/API/Gamepad/axes
   get axes() {
-    // we're a one-axis controller.
-    return [ this.xPos ];
+    return this.#axes;
   }
 
   setAxis(axis, val) {
@@ -60,15 +60,39 @@ class VirtualGameController extends HTMLElement {
     }
   }
 
-  constructor() { super(); }
+  initAxes(axisCount) {
+    if(!axisCount) {
+      axisCount = 1;
+    } else if(axisCount > 2) {
+      console.warn(
+        "Currently, VirtualGameController may have no more that 2 axes."
+      );
+      axisCount = 2;
+    } else if(axisCount <= 0) {
+      console.warn(
+        "Negative axis counts not supported in VirtualGameController."
+      );
+      axisCount = 1;
+    }
+
+    this.#axes = Array(axisCount).fill(0);
+  }
+
+  constructor(axisCount) {
+    super();
+    this.initAxes(axisCount);
+  }
 
   // initialize from html-level data-xxx attributes
   initFromDataConfig() {
     // configuration:
+    //   data-axis-count
     //   data-max-swing
     //   data-key-left
     //   data-key-right
-    // .. huh we could add axes here.  data-num-axes
+    if(typeof this.dataset.axisCount !== 'undefined') {
+      this.initAxes(this.dataset.axisCount);
+    }
     if(typeof this.dataset.maxSwing !== 'undefined') {
       this.#maxSwing = this.dataset.maxSwing;
     }
@@ -234,17 +258,14 @@ class VirtualGameController extends HTMLElement {
 
     var self = this;
 
-    this.addEventListener("mousemove", (ev) => {
+    let mousehandler = function(ev) {
       self.xPosClient = ev.clientX;
-    });
+      self.yPosClient = ev.clientY;
+    }
 
-    this.addEventListener("mouseenter", (ev) => {
-      self.xPosClient = ev.clientX;
-    });
-
-    this.addEventListener("mouseleave", (ev) => {
-      self.xPosClient = ev.clientX;
-    });
+    this.addEventListener("mousemove",  mousehandler);
+    this.addEventListener("mouseenter", mousehandler);
+    this.addEventListener("mouseleave", mousehandler);
 
     let touchHandler = function(ev) {
       if(ev.targetTouches) {
@@ -259,12 +280,12 @@ class VirtualGameController extends HTMLElement {
     this.addEventListener("touchmove",  touchHandler);
     this.addEventListener("touchend",   touchHandler);
 
-    function dispatchKeyEvent(ev) {
+    function keyhandler(ev) {
         var func = self.#keyControls[ev.code];
         if(func) func(ev.type === "keydown");
     }
-    window.addEventListener('keyup',   dispatchKeyEvent, false);
-    window.addEventListener('keydown', dispatchKeyEvent, false);
+    window.addEventListener('keyup',   keyhandler, false);
+    window.addEventListener('keydown', keyhandler, false);
   }
 
   disconnectedCallback() {
@@ -294,6 +315,9 @@ class VirtualGameController extends HTMLElement {
 }
 
 class VirtualJoystickElement extends VirtualGameController {
+  constructor() {
+    super(1);
+  }
 }
 
 window.customElements.define("virtual-joystick", VirtualJoystickElement);
