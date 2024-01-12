@@ -182,7 +182,8 @@ class VirtualGameController extends HTMLElement {
     let touchHandler = function(ev) {
       if(ev.targetTouches) {
         if(ev.targetTouches.length >= 1) {
-          self.setClientPos(ex.clientX, ev.clientY);
+          let pos = ev.targetTouches.item(0);
+          self.setClientPos(pos.clientX, pos.clientY);
           ev.preventDefault(); 
         }
       }
