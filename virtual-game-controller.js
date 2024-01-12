@@ -20,110 +20,16 @@
 
 class VirtualGameController extends HTMLElement {
 
-  #subClasses = [ ];   // shortcut to classes of subelements
-  #stick;              // shortcut to "stick" element
-  #ball;               // shortcut to "ball" element
-
+  // errf these are css sub classes
+  #subClasses = [ ];   // shortcut to classes of subelements XXX rename
   #keyControls = { }; // key event.code() -> handler function
 
-  #axes = [ 0 ];
-  #maxSwing  = 23.44;  // degrees, +- of center on x axis
-  #yRangePct = 100;     // % of container +- start position
-
-  get xPos() {
-    return this.#axes[0];
-  }
-
-  get yPos() {
-    return this.#axes[1];
-  }
-
-  setClientPos(clientX, clientY) {
-    let bounds = this.getBoundingClientRect();
-    if(clientX < bounds.x) clientX = bounds.x;
-    if(clientX > bounds.right) clientX = bounds.right;
-
-    if(clientY < bounds.y)      clientY = bounds.y;
-    if(clientY > bounds.bottom) clientY = bounds.bottom;
-
-    let relativeX = clientX - (bounds.x + bounds.width/2);
-    let relativeY = clientY - (bounds.y + bounds.height/2);
-
-    // 2* because we present range [-1.0 1.0] and not [-0.5 0.5]
-    this.setAxis(0, 2 * relativeX/bounds.width);
-    this.setAxis(1, 2 * relativeY/bounds.height);
-  }
-
-  // This is intended to work the same as Gamepad.axes
-  //  https://developer.mozilla.org/en-US/docs/Web/API/Gamepad/axes
-  get axes() {
-    return this.#axes;
-  }
-
-  setAxis(axis, val) {
-    if(axis < this.#axes.length) {
-      this.#axes[axis] = val;
-      switch(axis) {
-        case 0:
-          this.#stick.style.setProperty('rotate', `${this.#maxSwing * val}deg`);
-          break;
-        case 1:
-          this.#stick.style.setProperty('translateY', `${this.#yRangePct * val}%`);
-          this.#stick.style.setProperty('transform', `translateY(${this.#yRangePct * val}%)`);
-          break;
-      };
-    }
-  }
-
-  initAxes(axisCount) {
-    if(!axisCount) {
-      axisCount = 1;
-    } else if(axisCount > 2) {
-      console.warn(
-        "Currently, VirtualGameController may have no more that 2 axes."
-      );
-      axisCount = 2;
-    } else if(axisCount <= 0) {
-      console.warn(
-        "Negative axis counts not supported in VirtualGameController."
-      );
-      axisCount = 1;
-    }
-
-    this.#axes = Array(axisCount).fill(0);
-  }
-
-  constructor(axisCount) {
+  constructor() {
     super();
-    this.initAxes(axisCount);
+    this.initFromDataConfig();
   }
 
-  // initialize from html-level data-xxx attributes
   initFromDataConfig() {
-    // configuration:
-    //   data-axis-count
-    //   data-max-swing XXX
-    //   data-y-range-pct
-    //   data-key-left
-    //   data-key-right
-    if(typeof this.dataset.axisCount !== 'undefined') {
-      this.initAxes(this.dataset.axisCount);
-    }
-    if(typeof this.dataset.maxSwing !== 'undefined') {
-//  XXX change to data-x-range-degrees
-      this.#maxSwing = this.dataset.maxSwing;
-    }
-    if(typeof this.dataset.yRangePct !== 'undefined') {
-      this.#yRangePct = this.dataset.yRangePct;
-    }
-    // key controls!  
-    if(typeof this.dataset.keyLeft !== 'undefined') {
-        this.addKeyControl(this.dataset.keyLeft, 0, -1.0);
-    }
-    if(typeof this.dataset.keyRight !== 'undefined') {
-        this.addKeyControl(this.dataset.keyRight, 0, 1.0);
-    }
-
   }
 
   initGraphics() {
@@ -141,19 +47,6 @@ class VirtualGameController extends HTMLElement {
     const shadowDOM = this.attachShadow({ mode: "open" });
 
     this.setDefaultStyle(shadowDOM);
-
-    const slot       = this.createComponentElement("slot");
-    const slot_back  = this.createComponentElement("slot-back");
-    const slot_front = this.createComponentElement("slot-front");
-    slot.appendChild(slot_back);
-    slot.appendChild(slot_front);
-
-    this.#stick = this.createComponentElement("stick");
-    this.#ball  = this.createComponentElement("ball");
-    this.#stick.appendChild(this.#ball);
-
-    shadowDOM.appendChild(slot);
-    shadowDOM.appendChild(this.#stick);
     this.updateStyle();
 
   }
@@ -161,6 +54,8 @@ class VirtualGameController extends HTMLElement {
   setDefaultStyle(el) {
     this.innerStyle = document.createElement("style");
     el.appendChild(this.innerStyle);
+// XXX how to make this sane when dealing with subclasses?
+// I guess each sub can have its own... ok yeah should be good
     this.innerStyle.textContent = `
       .ball {
         background: radial-gradient(#000000, #ae0f0f);
@@ -332,10 +227,147 @@ class VirtualGameController extends HTMLElement {
 }
 
 class VirtualJoystickElement extends VirtualGameController {
-  constructor() {
-    super(1);
+  #stick;              // shortcut to "stick" element
+  #ball;               // shortcut to "ball" element
+  #axes = [ 0 ];
+  #maxSwing  = 23.44;  // degrees, +- of center on x axis
+  #yRangePct = 100;     // % of container +- start position
+
+  get xPos() {
+    return this.#axes[0];
+  }
+
+  get yPos() {
+    return this.#axes[1];
+  }
+
+  setClientPos(clientX, clientY) {
+    let bounds = this.getBoundingClientRect();
+    if(clientX < bounds.x) clientX = bounds.x;
+    if(clientX > bounds.right) clientX = bounds.right;
+
+    if(clientY < bounds.y)      clientY = bounds.y;
+    if(clientY > bounds.bottom) clientY = bounds.bottom;
+
+    let relativeX = clientX - (bounds.x + bounds.width/2);
+    let relativeY = clientY - (bounds.y + bounds.height/2);
+
+    // 2* because we present range [-1.0 1.0] and not [-0.5 0.5]
+    this.setAxis(0, 2 * relativeX/bounds.width);
+    this.setAxis(1, 2 * relativeY/bounds.height);
+  }
+
+  // This is intended to work the same as Gamepad.axes
+  //  https://developer.mozilla.org/en-US/docs/Web/API/Gamepad/axes
+  get axes() {
+    return this.#axes;
+  }
+
+  setAxis(axis, val) {
+    if(axis < this.#axes.length) {
+      this.#axes[axis] = val;
+      switch(axis) {
+        case 0:
+          this.#stick.style.setProperty('rotate', `${this.#maxSwing * val}deg`);
+          break;
+        case 1:
+          this.#stick.style.setProperty('translateY', `${this.#yRangePct * val}%`);
+          this.#stick.style.setProperty('transform', `translateY(${this.#yRangePct * val}%)`);
+          break;
+      };
+    }
+  }
+
+  initAxes(axisCount) {
+    if(!axisCount) {
+      axisCount = 1;
+    } else if(axisCount > 2) {
+      console.warn(
+        "Currently, VirtualGameController may have no more that 2 axes."
+      );
+      axisCount = 2;
+    } else if(axisCount <= 0) {
+      console.warn(
+        "Negative axis counts not supported in VirtualGameController."
+      );
+      axisCount = 1;
+    }
+
+    this.#axes = Array(axisCount).fill(0);
+  }
+
+  // initialize from html-level data-xxx attributes
+  initFromDataConfig() {
+    super.initFromDataConfig();
+
+    // configuration:
+    //   data-axis-count
+    //   data-max-swing XXX
+    //   data-y-range-pct
+    //   data-key-left
+    //   data-key-right
+    if(typeof this.dataset.axisCount !== 'undefined') {
+      this.initAxes(this.dataset.axisCount);
+    }
+    if(typeof this.dataset.maxSwing !== 'undefined') {
+//  XXX change to data-x-range-degrees
+      this.#maxSwing = this.dataset.maxSwing;
+    }
+    if(typeof this.dataset.yRangePct !== 'undefined') {
+      this.#yRangePct = this.dataset.yRangePct;
+    }
+    // key controls!  
+    if(typeof this.dataset.keyLeft !== 'undefined') {
+        this.addKeyControl(this.dataset.keyLeft, 0, -1.0);
+    }
+    if(typeof this.dataset.keyRight !== 'undefined') {
+        this.addKeyControl(this.dataset.keyRight, 0, 1.0);
+    }
+  }
+
+  initGraphics() {
+    super.initGraphics();
+
+    const slot       = this.createComponentElement("slot");
+    const slot_back  = this.createComponentElement("slot-back");
+    const slot_front = this.createComponentElement("slot-front");
+    slot.appendChild(slot_back);
+    slot.appendChild(slot_front);
+
+    this.#stick = this.createComponentElement("stick");
+    this.#ball  = this.createComponentElement("ball");
+    this.#stick.appendChild(this.#ball);
+
+    this.shadowRoot.appendChild(slot);
+    this.shadowRoot.appendChild(this.#stick);
+
+    this.updateStyle();
+  }
+
+  constructor(axisCount) {
+    super();
+    this.initAxes(axisCount);
   }
 }
-
 window.customElements.define("virtual-joystick", VirtualJoystickElement);
+
+// errrr so how is a game button different from a regular one?
+// I guess the key things are default styling and game pad
+// button emulation (in the api).
+// Oh, and you can poll the state.  and stuff.
+class VirtualGameButtonElement extends VirtualGameController {
+  #button; // sub element for the button itself (the part which moves)
+
+  constructor(axisCount) {
+    super();
+  }
+
+  initGraphics() {
+    super.initGraphics();
+    const frame  = this.createComponentElement("frame");
+    this.#button = this.createComponentElement("button");
+  }
+}
+window.customElements.define("virtual-game-button", VirtualGameButtonElement);
+
 

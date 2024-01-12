@@ -55,6 +55,10 @@
         --ball-border: green 10px;
  */
       }
+      #joystick-p2 {
+        --ball: radial-gradient(#003f00, #00a02f); 
+        --slot-front: purple;
+      }
       #controls {
         grid-column: 3 / 5;
         grid-row: 3;
@@ -80,7 +84,10 @@
         <div id="score-player" data-expand="players">
           <span data-controls="name" contenteditable></span>:
           <span data-shows="stats.score"> </span>
-          <div data-shows="controller.xPos"> </div>
+          <div>
+            <span data-shows="controller.xPos"> </span>,
+            <span data-shows="controller.yPos"> </span>
+          </div>
         </div>
         <div id="score-hive-mind" data-scope="hiveMind">
           <span data-shows="name"> </span>:
@@ -95,6 +102,8 @@
       </canvas>
       <div id="controls" align="center">
         <virtual-joystick id="joystick-p1" data-axis-count=1 data-key-left="ArrowLeft" data-key-right="ArrowRight"> </virtual-joystick>
+        <virtual-game-button id="fire-p1" data-key="Space"> </virtual-game-button>
+        <virtual-joystick id="joystick-p2" data-axis-count=1 data-key-left="KeyA" data-key-right="KeyS"> </virtual-joystick>
       </div>
     </div>
   </body>
