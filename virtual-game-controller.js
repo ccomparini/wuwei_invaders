@@ -395,6 +395,8 @@ class VirtualGameButtonElement extends VirtualGameController {
 
   #transitionedDown = false;
 
+  transitionCount = 0; // debugging
+
   // these next 3 emulate GamepadButton fucntionality
   // https://developer.mozilla.org/en-US/docs/Web/API/GamepadButton
   get value() {
@@ -427,6 +429,7 @@ class VirtualGameButtonElement extends VirtualGameController {
     this.#pressFrac = frac;
     if(!oldPressed && this.pressed) {
       this.#transitionedDown = true;
+      this.transitionCount++;
     }
   }
 
@@ -463,12 +466,12 @@ class VirtualGameButtonElement extends VirtualGameController {
     let touchHandler = function(ev) {
       if(ev.targetTouches) {
         if(ev.targetTouches.length >= 1) {
-          let touch = ev.targetTouches.item(0);
+          //let touch = ev.targetTouches.item(0);
           //self.value = touch.force;
           self.value = 1.0;
-          ev.preventDefault(); 
         }
       }
+      ev.preventDefault(); 
     };
     this.addEventListener("touchstart", touchHandler);
     this.addEventListener("touchmove",  touchHandler);

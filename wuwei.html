@@ -59,8 +59,8 @@
  */
       }
       #fire-p1 {
-        width: 100px;
-        height: 40px;
+        width: 160px;
+        height: 80px;
         margin-left: 0;
         margin-right: auto;
       }
@@ -68,11 +68,12 @@
         --ball: radial-gradient(#003f00, #00a02f); 
         --slot-front: purple;
       }
-      #controls {
+      #controllers {
         grid-column: 2 / 5;
         grid-row: 3;
         display: flex;
         align-items: end;
+        min-height: 30%;
       }
       .player-name {
         border: none;
@@ -96,8 +97,9 @@
           <span data-controls="name" contenteditable></span>:
           <span data-shows="stats.score"> </span>
           <div>
-            <span data-shows="controller.xPos"> </span>,
-            <span data-shows="controller.yPos"> </span>
+            <span data-shows="fireButton.value"> </span>,
+            <span data-shows="fireButton.pressed"> </span>,
+            <span data-shows="fireButton.transitionCount"> </span>,
           </div>
         </div>
         <div id="score-hive-mind" data-scope="hiveMind">
@@ -111,7 +113,7 @@
       </span>
       <canvas id="playfield">
       </canvas>
-      <div id="controls" align="center">
+      <div id="controllers" align="center">
         <virtual-game-button id="fire-p1" data-key="Space"> </virtual-game-button>
         <virtual-joystick id="joystick-p1" data-axis-count=1 data-key-left="ArrowLeft" data-key-right="ArrowRight"> </virtual-joystick>
         <!--virtual-joystick id="joystick-p2" data-axis-count=1 data-key-left="KeyA" data-key-right="KeyS"> </virtual-joystick --!>
