@@ -310,6 +310,12 @@ var wuwei = function() {
             this.changeYThus = 0;
             this.pointValue = Infinity;
             //this.name = "Hive Mind 0";
+
+            // size of range of possible refire delays
+            // for the minions.  smaller = more shooting.
+            // gets smaller as the game goes on.
+            //this.reloadRangeMs = 25000;
+            this.reloadRangeMs = 50000;
             this.name = "侵略者";
 
             this.spawnMinions();
@@ -332,8 +338,12 @@ var wuwei = function() {
                 this.changeYThus = 0;
             }
 
-            if(game.liveInvaders.count === 0)
+            if(game.liveInvaders.count === 0) {
+                // all minions destroyed!  make a new set
+                // with a lower average reload time (to make it harder)
+                this.reloadRangeMs *= 0.75;
                 this.spawnMinions();
+            }
 
             if(!this.nextRegroupCount)
                 this.nextRegroupCount = game.liveInvaders.count * .5;
@@ -406,7 +416,8 @@ var wuwei = function() {
             this.master = master;
             this.nextMoveMs = 0;
             this.minReloadMs   = 1000;
-            this.reloadRangeMs = 25000;
+            this.reloadRangeMs = master.reloadRangeMs;
+            //this.reloadRangeMs = 25000;
             this.nextShotMs    = this.reloadMs();
             this.pointValue    = 100;
             game.liveInvaders[this.id] = this;
@@ -499,7 +510,6 @@ var wuwei = function() {
     }
 
     class Player extends GameObj {
-// actually attach controller later (?)
         constructor(controller, x, y) {
             super("🙏", x, y);
             game.players[this.id] = this;
