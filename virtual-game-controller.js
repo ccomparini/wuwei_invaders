@@ -479,6 +479,9 @@ class VirtualGameButtonElement extends VirtualGameController {
       self.value = 0;
       ev.preventDefault(); 
     });
+    this.addEventListener("touchcancel", function(ev) {
+      self.value = 0;
+    });
   }
 
   defaultStyle() {
@@ -486,8 +489,8 @@ class VirtualGameButtonElement extends VirtualGameController {
       .frame {
         background: linear-gradient(to right, #b00020, #580010);
         border-radius: 50vb 50vb 50vb 50vb;
-        width: 100%;
-        height: 100%;
+        width: 70%;
+        height: 70%;
       }
       .button {
         background: linear-gradient(to right, #880020, #440000);
