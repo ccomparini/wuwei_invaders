@@ -31,7 +31,7 @@ var wuwei = function() {
     };
 
 
-    // deprecated:  moving functyionality to virtual-game-controller
+    // deprecated:  moving functionality to virtual-game-controller
     const keyControls = { }; // maps key code to control callback function
 
     const fontSize = "16px"; // 'cuz this looks good to me
