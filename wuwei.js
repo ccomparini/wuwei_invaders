@@ -21,13 +21,21 @@ var wuwei = function() {
         objects: Object.create(null, counterer),
         liveInvaders: Object.create(null, counterer),
         players:  Object.create(null, counterer),
+        livePlayers:  Object.create(null, counterer),
         invadersWon: false,
 
         //var field; // set by play();  is the html canvas on which we play
         settings: {
             missileSpeed: 0.2,
             playerSpeed:  0.2,
-        }
+        },
+
+        over: function() {
+            fetch(`https://fbmstudios.net/wuwei/game_over`)
+            for(const [key, player] of Object.entries(this.players)) {
+                fetch(`https://fbmstudios.net/wuwei/scores?name=${encodeURIComponent(player.name)}&score=${encodeURIComponent(player.stats.score)}`);
+            }
+        },
     };
 
 
@@ -327,7 +335,7 @@ var wuwei = function() {
             // hit a side of the field, or if there are no players left
             // to thwart the invaders:
             let changeDirection = 
-                (game.players.count == 0) ||
+                (game.livePlayers.count == 0) ||
                 (this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) ||
                 (this.changeXThus + this.minInvaderX < invaderXMargin);
 
@@ -368,6 +376,7 @@ var wuwei = function() {
                 // hive mind teleports in, to gloat:
                 this.x = field.clientWidth  / 2;
                 this.y = field.clientHeight / 2;
+
             } else if(this.acknowledgedOrders >= game.liveInvaders.count) {
                 this.commandMinions(dt, frameNum);
                 this.acknowledgedOrders = 0;
@@ -454,13 +463,13 @@ var wuwei = function() {
 
             this.nextShotMs -= dt;
             if(this.nextShotMs <= 0) {
-                if(!game.invadersWon && game.players.count) {
+                if(!game.invadersWon && game.livePlayers.count) {
                     this.nextShotMs = this.reloadMs();
                     // Also some rand to the speed could be amusing
                     new Missile(
                         this.x, this.y,
                         0, game.settings.missileSpeed,
-                        game.players, this
+                        game.livePlayers, this
                     );
                 }
             }
@@ -472,7 +481,11 @@ var wuwei = function() {
         }
 
         hitGround() {
-            game.invadersWon = true;
+            if(!game.invadersWon) {
+                game.over();
+
+                game.invadersWon = true;
+            }
         }
     }
 
@@ -513,6 +526,7 @@ var wuwei = function() {
         constructor(controller, x, y) {
             super("🙏", x, y);
             game.players[this.id] = this;
+            game.livePlayers[this.id] = this;
 
             this.fireButton = controller.fireButton;
             this.joystick   = controller.joystick;
@@ -550,8 +564,9 @@ var wuwei = function() {
         }
 
         destroy() {
+            //fetch(`https://fbmstudios.net/wuwei/dead?name=${encodeURIComponent(player.name)}`);
             super.destroy();
-            delete game.players[this.id];
+            delete game.livePlayers[this.id];
         }
 
         hitSide(dt) {
@@ -793,6 +808,8 @@ var wuwei = function() {
         'play': function(setup) {
             //const server = serverSocket();
 
+            fetch('https://fbmstudios.net/wuwei/state/play');
+
             field = initField(setup.playfield);
 
             // hiveMind creates and commands the invaders.
@@ -829,6 +846,9 @@ var wuwei = function() {
 
             window.addEventListener('keyup',   dispatchKeyEvent, false);
             window.addEventListener('keydown', dispatchKeyEvent, false);
+            window.addEventListener("beforeunload", () => {
+                fetch('https://fbmstudios.net/wuwei/state/done');
+            });
 
             // See also:
             //    https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements
