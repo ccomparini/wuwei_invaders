@@ -397,7 +397,7 @@ class VirtualGameButtonElement extends VirtualGameController {
 
   transitionCount = 0; // debugging
 
-  // these next 3 emulate GamepadButton fucntionality
+  // these next 3 emulate GamepadButton functionality
   // https://developer.mozilla.org/en-US/docs/Web/API/GamepadButton
   get value() {
     return this.#pressFrac;
@@ -412,7 +412,7 @@ class VirtualGameButtonElement extends VirtualGameController {
     return this.value > 0;
   }
 
-  // Game controlls are generally polled, but one thing we do care
+  // Game controls are generally polled, but one thing we do care
   // about is if a button changed state.  This returns true if it
   // has changed state since the last time something checked:
   get transitionedDown() {
