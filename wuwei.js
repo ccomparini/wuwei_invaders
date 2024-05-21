@@ -24,7 +24,6 @@ var wuwei = function() {
         livePlayers:  Object.create(null, counterer),
         invadersWon: false,
 
-        //var field; // set by play();  is the html canvas on which we play
         settings: {
             missileSpeed: 0.2,
             playerSpeed:  0.2,
