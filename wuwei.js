@@ -1,6 +1,7 @@
 
 var wuwei = function() {
 
+// GAME:
     var nextObjId = 1;
 
     // when using objects as collections, it's awkward
@@ -11,12 +12,14 @@ var wuwei = function() {
     // access info about the state of the game.
     // So anyway, counterer is a hokey way to make it easy
     // to get a count of items in a collection-like object:
+// I guess make a class?  GAME?
     var counterer = {
         count: {
             get: function() { return Object.keys(this).length; },
         },
     };
 
+// GAME and I guess make a class:
     var game = {
         objects: Object.create(null, counterer),
         liveInvaders: Object.create(null, counterer),
@@ -45,6 +48,8 @@ var wuwei = function() {
     // it seems that if I give it a float it dtrt and
     // actually updates more smoothly (on chrome, anyway).
     // this might be because I chose 60/sec.  go figure/revisit?
+// GAME AND Client though we need to implement differently.
+// Or should client react to packets?
     const updateInterval = 60/1000;
 
     function initField(field) {
@@ -733,38 +738,46 @@ var wuwei = function() {
         }
     }
 
-    function serverSocket() {
-        const url = 'ws://' + location.hostname + ':29234/';
+    function serverSocket(gameId) {
+if(!gameId) gameId = '4f634w';
+        //const url = 'ws://' + location.hostname + ':29234/';
         //const url = 'ws://' + location.hostname + ':80';
+        const baseUrl = 'wss://games.fbmstudios.net/wuwei-relay'; // GRRR browsers force ssl which adds dumb useless overhead
+        const url = baseUrl + `/${gameId}`;
+
 	// 'wuwei' sub protocol fails on chrome (Sec-WebSocket-Protocol)
         //const socket = new WebSocket(url, 'wuwei');
         const socket = new WebSocket(url);
 
 //socket.send("greetings, earthling");
 
+/*
+whaaaa.....  there's no message on this "error".  useless
         socket.onerror = function (ev) {
-            console.error('Error on socket to ' + url + ': ' + ev);
+            console.error(`Error on socket to ${url}: %o`, ev);
         };
+ */
 
         socket.onmessage = function (ev) {
-            console.log('Message from ' + url + ': ' + ev.data);
+            console.log(`message from ${url}: %o `, ev.data);
         };
 
         socket.onclose = function(ev) {
-            console.log('closed ' + url + ': ' + ev);
+            console.log(`closed websocket ${url}: %o`,  ev);
         };
 
         socket.onopen = function (ev) {
-            socket.send('Hello Server!');
+            socket.send(`OH HAI hello server at ${url}: %o`, ev);
         };
 
         return socket;
     }
 
+console.log("OH HAI RETURNING FROM WUWEI FUNCTION");
     return {
 
         'play': function(setup) {
-            //const server = serverSocket();
+            const server = serverSocket();
 
             fetch('https://fbmstudios.net/wuwei/state/play');
 
@@ -822,4 +835,11 @@ var wuwei = function() {
     };
 }();
 
-
+/*
+this "works" but is fail because wuwei presently requires all sorts of browser stuff
+// So we can require() this in node.js:
+if(typeof exports !== 'undefined') {
+console.log("Exporting wuwei as %o", wuwei);
+    exports.wuwei = wuwei;
+}
+ */
