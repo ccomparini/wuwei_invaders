@@ -435,17 +435,30 @@ class VirtualGameButtonElement extends VirtualGameController {
 
   initFromDataConfig() {
     super.initFromDataConfig();
-    // data-key tells which key to bind to, if any:
     const self = this;
-    if(typeof this.dataset.key !== 'undefined') {
-      this.addKeyControl(this.dataset.key, function(keyDown) {
-        if(keyDown) {
-          self.value = 1.0;
-        } else {
-          self.value = 0.0;
-        }
-      });
+
+    // data-keys is a comma separated string telling which
+    // key(s) to bind to, if any:
+    let keysStr = this.dataset.keys;
+    if(typeof keysStr === 'undefined') {
+        // old version was data-key; support that as well:
+        keysStr = this.dataset.key;
     }
+
+    if(typeof keysStr !== 'undefined') {
+      const separator = /,\s*/;
+      const keys = keysStr.split(separator);
+
+      for(const key of keys) {
+        this.addKeyControl(key, function(keyDown) {
+          if(keyDown) {
+            self.value = 1.0;
+          } else {
+            self.value = 0.0;
+          }
+        });
+      }
+    } 
   }
 
   constructor(axisCount) {
