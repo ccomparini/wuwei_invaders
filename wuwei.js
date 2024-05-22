@@ -577,43 +577,6 @@ var wuwei = function() {
                 this.x  = -this.minX + 1;
             }
         }
-
-        // player controls:
-        moveLeft(start) {
-            if(start) {
-                this.dx = -game.settings.playerSpeed;
-            } else {
-                this.dx = 0;
-            }
-        }
-
-        moveRight(start) {
-            if(start) {
-                this.dx = game.settings.playerSpeed;
-            } else {
-                this.dx = 0;
-            }
-        }
-
-        shoot(keyDown) {
-            if(keyDown && !this.isReloading) {
-                this.isShooting  = true;
-                // isReloading makes it so you have
-                // key up before shooting again:
-                this.isReloading = true;
-            }
-
-            if(!keyDown) {
-                this.isReloading = false;
-            }
-        }
-    }
-
-    function dispatchKeyEvent(ev) {
-        //console.log("key event " + ev.type + " " + ev.keyCode);
-
-        var func = keyControls[ev.keyCode];
-        if(func) func(ev.type === "keydown");
     }
 
     var showers = [ ];
@@ -827,25 +790,7 @@ var wuwei = function() {
                 //field.clientWidth/3, playerYPos
             );
 
-            keyControls[65] = p1.moveLeft.bind(p1);  // 65 = 'a'
-            keyControls[68] = p1.moveRight.bind(p1); // 68 = 'd'
-            keyControls[87] = p1.shoot.bind(p1);     // 87 = 'w'
-/*
-            keyControls[37] = p1.moveLeft.bind(p1);  // 37 = left arrow
-            keyControls[39] = p1.moveRight.bind(p1); // 39 = right arrow
-            keyControls[32] = p1.shoot.bind(p1);     // 32 = ' '
- */
 
-/*
-            var p2 = new Player(field.clientWidth*2/3, field.clientHeight * .9);
-            keyControls[37] = p2.moveLeft.bind(p2);  // 37 = left arrow
-            keyControls[39] = p2.moveRight.bind(p2); // 39 = right arrow
-            //keyControls[32] = p2.shoot.bind(p2);     // 32 = ' '
-            keyControls[38] = p2.shoot.bind(p2);     // 38 = up arrow
-*/
-
-            window.addEventListener('keyup',   dispatchKeyEvent, false);
-            window.addEventListener('keydown', dispatchKeyEvent, false);
             window.addEventListener("beforeunload", () => {
                 fetch('https://fbmstudios.net/wuwei/state/done');
             });
