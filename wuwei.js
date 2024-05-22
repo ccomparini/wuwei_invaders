@@ -38,10 +38,6 @@ var wuwei = function() {
         },
     };
 
-
-    // deprecated:  moving functionality to virtual-game-controller
-    const keyControls = { }; // maps key code to control callback function
-
     const fontSize = "16px"; // 'cuz this looks good to me
     const fieldWidthChars  = 40;
     const fieldHeightChars = 24;
