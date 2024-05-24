@@ -742,26 +742,19 @@ var wuwei = function() {
 if(!gameId) gameId = '4f634w';
         //const url = 'ws://' + location.hostname + ':29234/';
         //const url = 'ws://' + location.hostname + ':80';
-        const baseUrl = 'wss://games.fbmstudios.net/wuwei-relay'; // GRRR browsers force ssl which adds dumb useless overhead
-        const url = baseUrl + `/${gameId}`;
+        const url = `wss://games.fbmstudios.net/connect/wuwei/${gameId}`; // GRRR browsers force ssl which adds dumb useless overhead
 
 	// 'wuwei' sub protocol fails on chrome (Sec-WebSocket-Protocol)
         //const socket = new WebSocket(url, 'wuwei');
         const socket = new WebSocket(url);
 
-//socket.send("greetings, earthling");
-
-/*
-whaaaa.....  there's no message on this "error".  useless
-        socket.onerror = function (ev) {
-            console.error(`Error on socket to ${url}: %o`, ev);
-        };
- */
-
         socket.onmessage = function (ev) {
             console.log(`message from ${url}: %o `, ev.data);
         };
 
+        // onclose covers the onerror case as well - onerror doesn't
+        // actually specify the error in any reasonable way so it's
+        // not useful to have.
         socket.onclose = function(ev) {
             console.log(`closed websocket ${url}: %o`,  ev);
         };
@@ -773,7 +766,6 @@ whaaaa.....  there's no message on this "error".  useless
         return socket;
     }
 
-console.log("OH HAI RETURNING FROM WUWEI FUNCTION");
     return {
 
         'play': function(setup) {
