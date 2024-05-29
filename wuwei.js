@@ -742,7 +742,8 @@ var wuwei = function() {
 if(!gameId) gameId = '4f634w';
         //const url = 'ws://' + location.hostname + ':29234/';
         //const url = 'ws://' + location.hostname + ':80';
-        const url = `wss://games.fbmstudios.net/connect/wuwei/${gameId}`; // GRRR browsers force ssl which adds dumb useless overhead
+// GRRR browsers force ssl which adds dumb useless overhead
+        const url = `wss://games.fbmstudios.net/connect/wuwei/${gameId}?name=${name}`;
 
 	// 'wuwei' sub protocol fails on chrome (Sec-WebSocket-Protocol)
         //const socket = new WebSocket(url, 'wuwei');
