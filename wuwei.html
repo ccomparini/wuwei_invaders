@@ -75,8 +75,8 @@
         align-items: end;
         min-height: 30%;
       }
-      .player-name {
-        border: none;
+      .scorer-name {
+        margin: 2px;
         display: inline;
         font-family: inherit;
         font-size: inherit;
@@ -94,11 +94,11 @@
       <span id="scoreboard">
         <h3>楬</h3>
         <div id="score-player" data-expand="players">
-          <span data-controls="name" contenteditable></span>:
+          <span class="scorer-name" data-controls="name" contenteditable></span> :
           <span data-shows="stats.score"> </span>
         </div>
         <div id="score-hive-mind" data-scope="hiveMind">
-          <span data-shows="name"> </span>:
+          <span class="scorer-name" data-shows="name"> </span>:
           <span data-shows="stats.score"> </span>
         </div>
         <hr>
