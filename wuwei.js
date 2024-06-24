@@ -24,6 +24,8 @@ var wuwei = function() {
         livePlayers:  Object.create(null, counterer),
         invadersWon: false,
 
+        level: 0, // increments each time a minions spawns
+
         //var field; // set by play();  is the html canvas on which we play
         settings: {
             missileSpeed: 0.2,
@@ -318,7 +320,6 @@ var wuwei = function() {
             // size of range of possible refire delays
             // for the minions.  smaller = more shooting.
             // gets smaller as the game goes on.
-            //this.reloadRangeMs = 25000;
             this.reloadRangeMs = 50000;
             this.name = "侵略者";
 
@@ -347,6 +348,11 @@ var wuwei = function() {
                 // with a lower average reload time (to make it harder)
                 this.reloadRangeMs *= 0.75;
                 this.spawnMinions();
+
+                // all surviving players get points:
+                for(player of game.livePlayers) {
+                    player.credit(2500  * game.level);
+                }
             }
 
             if(!this.nextRegroupCount)
@@ -381,6 +387,7 @@ var wuwei = function() {
 
         spawnMinions(rows) {
             if(!rows) rows = 4;
+
             // spawn minions. 
             var charWidth  = field.clientWidth  / fieldWidthChars;
             var charHeight = field.clientHeight / fieldHeightChars;
@@ -396,6 +403,8 @@ var wuwei = function() {
             // ..and reset their orders:
             this.changeXThus = invaderXStep;
             this.changeYThus = 0;
+
+            game.level++;
         }
 
         learnAboutMinion(minion, frameNum) {
@@ -430,7 +439,6 @@ var wuwei = function() {
 
         reloadMs() {
             let rand = Math.random() * Math.random();
-            //let rand = Math.random() * Math.random() * Math.random() * Math.random(); // way brutal!
             return rand * this.reloadRangeMs + this.minReloadMs;
         }
 
