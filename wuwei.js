@@ -164,7 +164,7 @@ var wuwei = function() {
         }
 
         credit(numPoints) {
-            this.stats.score += numPoints;
+            this.stats.score += Math.round(numPoints);
             if(this.master) {
                 // master of this object gets credit, too
                 this.master.credit(numPoints);
