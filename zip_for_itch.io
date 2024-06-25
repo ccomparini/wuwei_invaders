@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cp wuwei.html index.html
+ZIPFILE=shipit/wuwei-invaders.zip
 
 FILES=(
     LICENSE
@@ -10,4 +10,5 @@ FILES=(
     index.html
 )
 
-zip wuwei-invaders.zip ${FILES[@]}
+cp wuwei.html index.html
+zip $ZIPFILE ${FILES[@]}
