@@ -11,7 +11,7 @@ var wuwei = function() {
     };
 
 
-    var nextObjId = 1;
+    let nextObjId = 1;
 
     // when using objects as collections, it's awkward
     // to get the size of the collection.  but (and after
@@ -21,13 +21,13 @@ var wuwei = function() {
     // access info about the state of the game.
     // So anyway, counterer is a hokey way to make it easy
     // to get a count of items in a collection-like object:
-    var counterer = {
+    const counterer = {
         count: {
             get: function() { return Object.keys(this).length; },
         },
     };
 
-    var game = {
+    const game = {
         objects: Object.create(null, counterer),
         liveInvaders: Object.create(null, counterer),
         players:  Object.create(null, counterer),
