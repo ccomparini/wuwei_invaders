@@ -1,5 +1,15 @@
 
 var wuwei = function() {
+    // translations:
+    const dictionaries = {
+        'en': {
+            '楬': 'scores',
+            '侵略者': 'hive mind',
+            '波的入侵者:': 'wave: ',
+            '剩餘的侵略者:': 'remaining invaders: ',
+        },
+    };
+
 
     var nextObjId = 1;
 
@@ -30,6 +40,11 @@ var wuwei = function() {
         settings: {
             missileSpeed: 0.2,
             playerSpeed:  0.2,
+            language:     navigator.language,
+
+            get dictionary() {
+                return dictionaryFor(this.language);
+            }
         },
 
         over: function() {
@@ -321,7 +336,7 @@ var wuwei = function() {
             // for the minions.  smaller = more shooting.
             // gets smaller as the game goes on.
             this.reloadRangeMs = 50000;
-            this.name = "侵略者";
+            this.name = translate("侵略者", game.settings.dictionary);
 
             this.spawnMinions();
         }
@@ -744,12 +759,7 @@ var wuwei = function() {
 
     function serverSocket() {
         const url = 'ws://' + location.hostname + ':29234/';
-        //const url = 'ws://' + location.hostname + ':80';
-	// 'wuwei' sub protocol fails on chrome (Sec-WebSocket-Protocol)
-        //const socket = new WebSocket(url, 'wuwei');
         const socket = new WebSocket(url);
-
-//socket.send("greetings, earthling");
 
         socket.onerror = function (ev) {
             console.error('Error on socket to ' + url + ': ' + ev);
@@ -770,10 +780,62 @@ var wuwei = function() {
         return socket;
     }
 
+// more translation stuff:
+    function translate(str, dictionary) {
+        if(dictionary[str] !== undefined) {
+           str = dictionary[str];
+        } // else leave it as is
+        return str;
+    }
+
+    function dontTranslateTag(elem) {
+        switch(elem.tagName) {
+            case 'HEAD':   return true;
+            case 'SCRIPT': return true;
+            case 'STYLE':  return true;
+        }
+
+        return false;
+    }
+
+    function translateElementText(elem, dictionary) {
+        if(dontTranslateTag(elem)) {
+            // skip the entire tree from here down for
+            // <head> and <script> and stuff:
+            return;
+        }
+
+        if(elem.nodeType === Node.TEXT_NODE) {
+            const tc = elem.textContent?.trim();
+            elem.textContent = translate(tc, dictionary);
+        }
+
+        for(let kid of elem.childNodes) {
+            translateElementText(kid, dictionary);
+        }
+    }
+
+    function dictionaryFor(lang) {
+        if(lang) {
+            if(dictionaries[lang])
+                return dictionaries[lang];
+
+            lang = lang.substring(0, 2); // 'en-US' -> 'en', for example
+            return dictionaries[lang];
+        }
+
+        return undefined;
+    }
+// end more translation stuff
+
     return {
 
         'play': function(setup) {
             //const server = serverSocket();
+            const dict = dictionaryFor(navigator.language);
+            if(dict) {
+                translateElementText(document, dict);
+            } // else just leave it.
 
             fetch('https://fbmstudios.net/wuwei/state/play');
 
@@ -793,7 +855,6 @@ var wuwei = function() {
                 setup.controllers[0], field.clientWidth/3, playerYPos
                 //field.clientWidth/3, playerYPos
             );
-
 
             window.addEventListener("beforeunload", () => {
                 fetch('https://fbmstudios.net/wuwei/state/done');
