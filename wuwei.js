@@ -36,6 +36,8 @@ var wuwei = function() {
 
         level: 0, // increments each time a minions spawns
 
+        paused: false,
+
         //var field; // set by play();  is the html canvas on which we play
         settings: {
             missileSpeed: 0.2,
@@ -829,6 +831,13 @@ var wuwei = function() {
 // end more translation stuff
 
     return {
+        'pause': function(newval) {
+            if(newval === undefined) {
+                game.paused = !game.paused;
+            } else {
+                game.paused = newval;
+            }
+        },
 
         'play': function(setup) {
             //const server = serverSocket();
@@ -860,6 +869,14 @@ var wuwei = function() {
                 fetch('https://fbmstudios.net/wuwei/state/done');
             });
 
+            // pause key is "P".
+            // ... this isn't great - key controls are getting splatted all
+            // over the place.  figure out a better setup.
+            window.addEventListener('keyup', (ev) => {
+                if(ev.code === 'KeyP')
+                    this.pause();
+            });
+
             // See also:
             //    https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements
             //
@@ -872,21 +889,23 @@ var wuwei = function() {
                 updateDisplays();
 
                 var now = Date.now();
-                var deltaT = now - lastUpdate;
-                for (let obj of Object.values(game.objects)) {
-                    obj.behave(deltaT, frameNum);
-                }
+                if(!game.paused) {
+                    var deltaT = now - lastUpdate;
+                    for (let obj of Object.values(game.objects)) {
+                        obj.behave(deltaT, frameNum);
+                    }
 
-                // draw the game elements.  looks like we don't
-                // have to bother double buffering.  runs good
-                // on my machine, anyway!
-                clearScreen(ctx);
-                for (let obj of Object.values(game.objects)) {
-                    obj.draw(ctx);
-                }
+                    // draw the game elements.  looks like we don't
+                    // have to bother double buffering.  runs good
+                    // on my machine, anyway!
+                    clearScreen(ctx);
+                    for (let obj of Object.values(game.objects)) {
+                        obj.draw(ctx);
+                    }
 
-                lastUpdate = now;
-                frameNum++;
+                    frameNum++;
+               }
+               lastUpdate = now;
             }, updateInterval);
         }
     };
