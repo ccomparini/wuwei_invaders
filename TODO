@@ -1,0 +1,21 @@
+
+Tue Jun 25 15:13:56 UTC 2024
+
+FOR SHIPIT PUTPOSES:
+   x either remove the fetches which 404 or make
+     nginx do something with them
+   x translations (system)
+   x cookies to keep player name
+   x pause feature
+     - visual representation of that
+   - high scores!
+     - save on game server
+     - ALSO save locally
+   - start screen
+     - player name entry
+   - add sound
+     - wu wei movement sound
+     - shot sound
+     - soft explosion
+     - player hit sound
+     - invader hit sound
