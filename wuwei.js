@@ -569,7 +569,7 @@ var wuwei = function() {
 
             this.fireButton = controller.fireButton;
             this.joystick   = controller.joystick;
-            this._name      = saved?.name || `Player ${game.players.count}`;
+            this.name       = saved?.name || `Player ${game.players.count}`;
             this.pointValue = 5000;
         }
 
