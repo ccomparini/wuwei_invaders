@@ -50,9 +50,9 @@ var wuwei = function() {
         },
 
         over: function() {
-            fetch(`https://fbmstudios.net/wuwei/game_over`)
+            fetch(`https://fbmstudios.net/wuwei/stats/game_over`)
             for(const [key, player] of Object.entries(this.players)) {
-                fetch(`https://fbmstudios.net/wuwei/scores?name=${encodeURIComponent(player.name)}&score=${encodeURIComponent(player.stats.score)}`);
+                fetch(`https://fbmstudios.net/wuwei/stats/scores?name=${encodeURIComponent(player.name)}&score=${encodeURIComponent(player.stats.score)}`);
             }
         },
     };
@@ -585,7 +585,7 @@ var wuwei = function() {
         }
 
         destroy() {
-            //fetch(`https://fbmstudios.net/wuwei/dead?name=${encodeURIComponent(player.name)}`);
+            fetch(`https://fbmstudios.net/wuwei/stats/dead?name=${encodeURIComponent(this.name)}&score=${encodeURIComponent(this.stats.score)}`);
             super.destroy();
             delete game.livePlayers[this.id];
         }
@@ -832,6 +832,7 @@ var wuwei = function() {
 
     return {
         'pause': function(newval) {
+            fetch('https://fbmstudios.net/wuwei/stats/pause');
             if(newval === undefined) {
                 game.paused = !game.paused;
             } else {
@@ -846,7 +847,7 @@ var wuwei = function() {
                 translateElementText(document, dict);
             } // else just leave it.
 
-            fetch('https://fbmstudios.net/wuwei/state/play');
+            fetch('https://fbmstudios.net/wuwei/stats/play');
 
             field = initField(setup.playfield);
 
