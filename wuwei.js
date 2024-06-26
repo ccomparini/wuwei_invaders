@@ -51,7 +51,7 @@ var wuwei = function() {
 
         over: function() {
             fetch(`https://fbmstudios.net/wuwei/stats/game_over`)
-            for(const [key, player] of Object.entries(this.players)) {
+            for(const player of this.players.values) {
                 fetch(`https://fbmstudios.net/wuwei/stats/scores?name=${encodeURIComponent(player.name)}&score=${encodeURIComponent(player.stats.score)}`);
             }
         },
@@ -543,16 +543,55 @@ var wuwei = function() {
         }
     }
 
+    function savedData(name) {
+        const got = localStorage.getItem(name);
+        if(got) {
+            try {
+                var result = JSON.parse(got)
+            }
+            catch(error) {
+                console.log(`${error} in '${got.value}'`);
+            }
+        }
+        return result;
+    }
+
+    function save(name, val) {
+        localStorage.setItem(name, JSON.stringify(val));
+    }
+
     class Player extends GameObj {
         constructor(controller, x, y) {
-            super("🙏", x, y);
+            const saved = savedData("player-settings");
+            super(saved?.appearance || "🙏", x, y);
             game.players[this.id] = this;
             game.livePlayers[this.id] = this;
 
             this.fireButton = controller.fireButton;
             this.joystick   = controller.joystick;
-            this.name = "Player " + game.players.count;
+            this._name      = saved?.name || `Player ${game.players.count}`;
             this.pointValue = 5000;
+        }
+
+        get settings() {
+            return {
+                appearance: this.appearance,
+                name:       this.name,
+            }
+        }
+
+        get name() {
+            return this._name;
+        }
+
+        set name(newName) {
+            this._name = newName;
+            // name changed, so save "settings" to a cookie.
+            // this does mean that if there's more than one player
+            // in a browser, they'll splat each others names.
+            // doing this for the moment until I figure out
+            // something better.
+            save("player-settings", this.settings);
         }
 
         draw(ctx) {
