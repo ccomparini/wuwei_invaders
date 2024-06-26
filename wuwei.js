@@ -51,7 +51,7 @@ var wuwei = function() {
 
         over: function() {
             fetch(`https://fbmstudios.net/wuwei/stats/game_over`)
-            for(const player of this.players.values) {
+            for(const player of Object.values(this.players)) {
                 fetch(`https://fbmstudios.net/wuwei/stats/scores?name=${encodeURIComponent(player.name)}&score=${encodeURIComponent(player.stats.score)}`);
             }
         },
