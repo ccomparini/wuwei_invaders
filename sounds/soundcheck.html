@@ -14,12 +14,13 @@
     </div>
     <script src="https://fbmstudios.net/uiulars/uiulator.js"></script>
     <script type="module">
-      import { sounds } from "./sounds.mjs";
+      import { sounds, playSound } from "./sounds.mjs";
 
       const uila = uiulator(sounds, document.getElementById('sounds'));
 
       window.playSound = function(which) {
-console.log(`OH HAI NOW PLAYING ${which} =\n${sounds[which]}`);
+//console.log(`OH HAI NOW PLAYING ${which} =\n${sounds[which]}`);
+        playSound(which);
       }
     </script>
   </body>
