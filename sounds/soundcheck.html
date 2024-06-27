@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/default.css">
+    <title>wuwei sound check</title>
+  </head>
+  <body>
+    <div id='sounds'>
+      <table>
+        <tr data-expands>
+          <td data-shows='@key'></td>
+          <td><button value='@key' onclick='playSound(this.value);'>play</button> </td>
+        </tr>
+      <div>
+    </div>
+    <script src="https://fbmstudios.net/uiulars/uiulator.js"></script>
+    <script type="module">
+      import { sounds } from "./sounds.mjs";
+
+      const uila = uiulator(sounds, document.getElementById('sounds'));
+
+      window.playSound = function(which) {
+console.log(`OH HAI NOW PLAYING ${which} =\n${sounds[which]}`);
+      }
+    </script>
+  </body>
+</html>
+
