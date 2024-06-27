@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ZIPFILE=shipit/wuwei-invaders.zip
+ZIPFILE=build/wuwei-invaders.zip
 
 FILES=(
     LICENSE
