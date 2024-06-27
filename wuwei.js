@@ -27,6 +27,16 @@ var wuwei = function() {
         },
     };
 
+    function createAudioContext() {
+        try {
+            return new AudioContext();
+        }
+        catch(err) {
+            console.warn(`problem setting up audio: ${err}`);
+        }
+        return undefined;
+    }
+
     const game = {
         objects: Object.create(null, counterer),
         liveInvaders: Object.create(null, counterer),
@@ -37,6 +47,16 @@ var wuwei = function() {
         level: 0, // increments each time a minions spawns
 
         paused: false,
+
+        audioContext: createAudioContext(),
+
+        sounds: {
+/*
+// this Audio is for the birds.  creates an element
+//  https://web.dev/articles/webaudio-intro
+            missileFired: new Audio('pfft.mp3'),
+ */
+        },
 
         //var field; // set by play();  is the html canvas on which we play
         settings: {
@@ -256,6 +276,8 @@ var wuwei = function() {
             this.dy = dy;
             this.vsGroup = vsGroup;
             this.master = master;
+
+//            game.sounds.missileFired.play();
         }
 
         behave(dt, frameNum) {
@@ -493,6 +515,7 @@ var wuwei = function() {
                 if(!game.invadersWon && game.livePlayers.count) {
                     this.nextShotMs = this.reloadMs();
                     // Also some rand to the speed could be amusing
+//if(0)
                     new Missile(
                         this.x, this.y,
                         0, game.settings.missileSpeed,
