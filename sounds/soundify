@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+  soundify - convert mp3s to embedded js
+
+  Prints js source for an object whose keys are sound names and
+  whose values are base64 encoded mp3s based on all mp3s found
+  in the current directory and below.
+
+"""
+
+import base64
+import os
+import sys
+
+def main():
+    soundfiles = [ ]
+    for root, dirs, files in os.walk('.'):
+        for name in files:
+            if name.endswith('.mp3'):
+                fn = os.path.relpath(os.path.join(root, name))
+                soundfiles.append(fn)
+
+    print("{")
+    for file in soundfiles:
+        with open(file, "rb") as mp3:
+            contents = base64.b64encode(mp3.read())
+            print(f"    '{file}': '{contents.decode()}',")
+    print("}")
+
+if __name__ == '__main__':
+    main()
