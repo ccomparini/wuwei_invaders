@@ -16,6 +16,9 @@
 import math
 import os
 import sys
+import warnings
+
+from pathlib import Path
 
 def main():
     soundfiles = [ ]
@@ -34,11 +37,19 @@ def main():
     def p_i(level, *args):    # "print indented"
         print(indent*level, *args, sep='')
 
+    def soundname(filename):
+        return Path(filename).stem
+
+    soundnames = { }
     print("export const soundBytes = {")
     for file in soundfiles:
+        sn = soundname(file)
+        if sn in soundnames:
+            warn(f"sounds {file} and {soundnames[sn]} both have name {sn}")
+
         with open(file, "rb") as mp3:
-            p_i(1, f"'{file}': new Uint8Array([")
-            mp3bytes = mp3.read();
+            p_i(1, f"'{sn}': new Uint8Array([  // {file}")
+            mp3bytes = mp3.read()
             lend = 0
             for lnum in range(0, math.floor(len(mp3bytes)/bytes_per_line)):
                 lstart = lnum * bytes_per_line
