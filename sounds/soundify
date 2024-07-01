@@ -3,14 +3,16 @@
 """
   soundify - convert mp3s to a javascript module
 
-  Prints source mjs for an object whose keys are sound names and
-  whose values are base64 encoded mp3s based on all mp3s found
-  in the current directory and below.
+  Prints source mjs for an object whose keys are sound names
+  and whose values are ArrayBuffers with the data for the
+  corresponding mp3, for all mp3s found in the current
+  directory and below.  Callers can get playable sounds from
+  these using BaseAudioContext.decodeAudioData().
 
-  The generated module exports an object named "sounds".
+  The generated module exports that object under the name
+  "soundBytes".
 
 """
-#import base64
 import math
 import os
 import sys
@@ -24,34 +26,29 @@ def main():
                 soundfiles.append(fn)
 
     bytes_per_line = 8
-    indent = '\t'
 
     def byte_line(byte_slice):
         return ', '.join(map(hex, byte_slice))
 
+    indent = '\t'
     def p_i(level, *args):    # "print indented"
-        print(indent*level, *args)
+        print(indent*level, *args, sep='')
 
-    # ... sigh
-    print("\nfunction decode(ctx, sb) { return await ctx.decodeAudioData(sb); }\n\n");
-
-    print("export function sounds(ctx) {")
-    p_i(1, "return {")
+    print("export const soundBytes = {")
     for file in soundfiles:
         with open(file, "rb") as mp3:
-            p_i(2, f"'{file}': decode(ctx, new Uint8Array([")
+            p_i(1, f"'{file}': new Uint8Array([")
             mp3bytes = mp3.read();
             lend = 0
             for lnum in range(0, math.floor(len(mp3bytes)/bytes_per_line)):
                 lstart = lnum * bytes_per_line
                 lend   = lstart + bytes_per_line
-                p_i(3, byte_line(mp3bytes[lstart:lend]), ",")
+                p_i(2, byte_line(mp3bytes[lstart:lend]), ",")
 
-            p_i(3, byte_line(mp3bytes[lend:len(mp3bytes)]))
-            p_i(2, "])).buffer,")
+            p_i(2, byte_line(mp3bytes[lend:len(mp3bytes)]))
+            p_i(2, "]).buffer,")
 
-    p_i(1, "};")
-    p_i(0, "}")
+    p_i(0, "};")
 
 if __name__ == '__main__':
     main()
