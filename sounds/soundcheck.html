@@ -5,6 +5,7 @@
   </head>
   <body>
     <div id='sounds'>
+      <button onclick='startSoundcheck();'>start</button>
       <table>
         <tr data-expands>
           <td data-shows='@key'></td>
@@ -14,13 +15,30 @@
     </div>
     <script src="https://fbmstudios.net/uiulars/uiulator.js"></script>
     <script type="module">
-      import { sounds, playSound } from "./soundcheck.mjs";
-
+      let sounds = { };
       const uila = uiulator(sounds, document.getElementById('sounds'));
+      import { loadSounds, playSound } from "./soundcheck.mjs";
+
+
+      let audioCtx;
+      window.startSoundcheck = function() {
+          // Apparently because advertizers ruin everything, pages
+          // need some kind of user interaction before they can get
+          // an audio context (or you get a warning).  Hence the
+          // whole "start" button thing.
+          //  (warning: "The AudioContext was not allowed to start.
+          //  It must be resumed (or created) after a user gesture
+          //  on the page. https://goo.gl/7K7WLu")
+          // .. makes some sense, though it's annoying.
+          audioCtx = new AudioContext();
+          sounds = loadSounds(audioCtx, sounds);
+          uila.update();
+      }
 
       window.playSound = function(which) {
 //console.log(`OH HAI NOW PLAYING ${which} =\n${sounds[which]}`);
-        playSound(which);
+        if(audioCtx)
+            playSound(audioCtx, which);
       }
     </script>
   </body>
