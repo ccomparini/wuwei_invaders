@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-  soundify - convert mp3s to embedded js
+  soundify - convert mp3s to a javascript module
 
-  Prints js source for an object whose keys are sound names and
+  Prints source mjs for an object whose keys are sound names and
   whose values are base64 encoded mp3s based on all mp3s found
   in the current directory and below.
 
-"""
+  The generated module exports an object named "sounds".
 
-import base64
+"""
+#import base64
+import math
 import os
 import sys
 
@@ -21,12 +23,35 @@ def main():
                 fn = os.path.relpath(os.path.join(root, name))
                 soundfiles.append(fn)
 
-    print("{")
+    bytes_per_line = 8
+    indent = '\t'
+
+    def byte_line(byte_slice):
+        return ', '.join(map(hex, byte_slice))
+
+    def p_i(level, *args):    # "print indented"
+        print(indent*level, *args)
+
+    # ... sigh
+    print("\nfunction decode(ctx, sb) { return await ctx.decodeAudioData(sb); }\n\n");
+
+    print("export function sounds(ctx) {")
+    p_i(1, "return {")
     for file in soundfiles:
         with open(file, "rb") as mp3:
-            contents = base64.b64encode(mp3.read())
-            print(f"    '{file}': '{contents.decode()}',")
-    print("}")
+            p_i(2, f"'{file}': decode(ctx, new Uint8Array([")
+            mp3bytes = mp3.read();
+            lend = 0
+            for lnum in range(0, math.floor(len(mp3bytes)/bytes_per_line)):
+                lstart = lnum * bytes_per_line
+                lend   = lstart + bytes_per_line
+                p_i(3, byte_line(mp3bytes[lstart:lend]), ",")
+
+            p_i(3, byte_line(mp3bytes[lend:len(mp3bytes)]))
+            p_i(2, "])).buffer,")
+
+    p_i(1, "};")
+    p_i(0, "}")
 
 if __name__ == '__main__':
     main()
