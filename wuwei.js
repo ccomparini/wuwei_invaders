@@ -366,10 +366,6 @@ var wuwei = function() {
                 this.reloadRangeMs *= 0.75;
                 this.spawnMinions();
 
-                // all surviving players get points:
-                for(player of game.livePlayers) {
-                    player.credit(2500  * game.level);
-                }
             }
 
             if(!this.nextRegroupCount)
@@ -420,6 +416,16 @@ var wuwei = function() {
             // ..and reset their orders:
             this.changeXThus = invaderXStep;
             this.changeYThus = 0;
+
+            // .... and this counts as completing a level.
+            // so, players get points * level for finishing
+            // the round. (note we do this before incrementing
+            // level so that there's no bonus at the start)
+            if(game.livePlayers) {
+                for(const player of Object.values(game.livePlayers)) {
+                    player.credit(2500  * game.level);
+                }
+            }
 
             game.level++;
         }
