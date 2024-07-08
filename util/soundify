@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-  soundify - convert mp3s to a javascript module
+  soundify - convert mp3s to a javascript object
 
-  Prints source mjs for an object whose keys are sound names
+  Prints source for an object whose keys are sound names
   and whose values are ArrayBuffers with the data for the
   corresponding mp3, for all mp3s found in the current
   directory and below.  Callers can get playable sounds from
@@ -13,6 +13,7 @@
   "soundBytes".
 
 """
+# XXX^^ that ain't right anymore
 import math
 import os
 import sys
@@ -41,7 +42,7 @@ def main():
         return Path(filename).stem
 
     soundnames = { }
-    print("export const soundBytes = {")
+    p_i(0, "const sounds = {")
     for file in soundfiles:
         sn = soundname(file)
         if sn in soundnames:

@@ -14,6 +14,7 @@
       </table>
     </div>
     <script src="https://fbmstudios.net/uiulars/uiulator.js"></script>
+    <script src="sounds.js"></script>
     <script type="module">
       let sounds = { };
       const uila = uiulator(sounds, document.getElementById('sounds'));
@@ -30,8 +31,8 @@
           //  It must be resumed (or created) after a user gesture
           //  on the page. https://goo.gl/7K7WLu")
           // .. makes some sense, though it's annoying.
-          audioCtx = new AudioContext();
-          sounds = loadSounds(audioCtx, sounds);
+          //audioCtx = new AudioContext();
+          //sounds = loadSounds(audioCtx, sounds);
           uila.update();
       }
 
