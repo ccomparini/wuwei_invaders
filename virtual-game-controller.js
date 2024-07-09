@@ -2,8 +2,9 @@
     Old fashioned arcade style joystick.
 
     Usage:
-       
-       <script src="virtual-joystick.js"></script>
+       <head>
+         <script src="virtual-joystick.js"></script>
+       </head>
 
      one axis joysticks:
        <virtual-joystick id="joystick-p1"> </virtual-joystick>
@@ -11,6 +12,10 @@
 
      two axis:
        <virtual-joystick id="joystick" data-axis-count=2> </virtual-joystick>
+
+    Note:
+       Put the script tag for this in the <head> of your html so it
+       runs before you use the tags.
 
     Styling: XXX fill in
 
