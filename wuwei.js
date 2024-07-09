@@ -10,7 +10,68 @@ var wuwei = function() {
         },
     };
 
+    // given a game object, returns a record containing
+    // that object's current score (stats... hmm)
+    // (this is nearly just a GameObjStats)
+    function scoreRecord(gameObj) {
+        return {
+            name: gameObj.name,
+            appearance: gameObj.appearance,
+            stats: gameObj.stats,
+      
+            get score() { return this.stats.score; }
+        }
+    }
 
+    function cmp(a, b) {
+        // aka <=>
+        if     (a < b) return -1;
+        else if(a > b) return  1;
+        else           return  0;
+    }
+
+    function compareScoreRecord(a, b) {
+        // a and b are reversed so that higher scores are
+        // earlier in the array:
+        return cmp(b.score, a.score);
+    }
+
+    // grr.. can we make this an attribute of the array?
+    function insertSorted(arr, item, cmpfunc) {
+        if(!arr.length) {
+            arr[0] = item;
+            return;
+        }
+
+        if(!cmpfunc) cmpfunc = cmp;
+
+        let lp = 0;  // lowest position in range
+        let hp = arr.length;
+        do {
+            // pos is the position before which we'll insert:
+            // (actually we could just use hp)
+            var pos = Math.floor((lp + hp)/2);
+            const diff = cmpfunc(item, arr[pos]);
+            if(diff < 0) {
+                hp = pos;
+            } else if(diff > 0) {
+                lp = ++pos;
+            } else {
+                break;
+            }
+        } while(lp < hp);
+        arr.splice(pos, 0, item);
+    }
+
+/*
+let foo = [ ];
+for(let a = 0; a < 10; a++) {
+insertSorted(foo, Math.floor(Math.random()*10) + 7);
+insertSorted(foo, a);
+insertSorted(foo, Math.floor(Math.random()*40));
+}
+ */
+ 
     let nextObjId = 1;
 
     // when using objects as collections, it's awkward
@@ -37,6 +98,20 @@ var wuwei = function() {
         level: 0, // increments each time a minions spawns
 
         paused: false,
+
+        scores: localRetrieve('scores', [ ]).sort(compareScoreRecord),
+        recordScore: function (gameObj) {
+            const rec = scoreRecord(gameObj);
+            insertSorted(this.scores, rec,compareScoreRecord);
+            localSave('scores', this.scores);
+        },
+
+        highScores: function (howMany) {
+            return this.scores.slice(0, howMany);
+        },
+
+        // top 5 (or fewer) scores:
+        get topScores() { return highScores(5) },
 
         //var field; // set by play();  is the html canvas on which we play
         settings: {
@@ -549,26 +624,26 @@ var wuwei = function() {
         }
     }
 
-    function savedData(name) {
+    function localRetrieve(name, defaultVal) {
         const got = localStorage.getItem(name);
         if(got) {
             try {
-                var result = JSON.parse(got)
+                return JSON.parse(got)
             }
             catch(error) {
                 console.log(`${error} in '${got.value}'`);
             }
         }
-        return result;
+        return defaultVal;
     }
 
-    function save(name, val) {
+    function localSave(name, val) {
         localStorage.setItem(name, JSON.stringify(val));
     }
 
     class Player extends GameObj {
         constructor(controller, x, y) {
-            const saved = savedData("player-settings");
+            const saved = localRetrieve("player-settings");
             super(saved?.appearance || "🙏", x, y);
             game.players[this.id] = this;
             game.livePlayers[this.id] = this;
@@ -592,12 +667,12 @@ var wuwei = function() {
 
         set name(newName) {
             this._name = newName;
-            // name changed, so save "settings" to a cookie.
+            // name changed, so save "settings".
             // this does mean that if there's more than one player
             // in a browser, they'll splat each others names.
             // doing this for the moment until I figure out
             // something better.
-            save("player-settings", this.settings);
+            localSave("player-settings", this.settings);
         }
 
         draw(ctx) {
@@ -632,6 +707,7 @@ var wuwei = function() {
         destroy() {
             fetch(`https://fbmstudios.net/wuwei/stats/dead?name=${encodeURIComponent(this.name)}&score=${encodeURIComponent(this.stats.score)}`);
             super.destroy();
+            game.recordScore(this);
             delete game.livePlayers[this.id];
         }
 

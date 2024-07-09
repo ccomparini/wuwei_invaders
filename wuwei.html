@@ -110,6 +110,14 @@
           剩餘的侵略者:
           <span data-shows="liveInvaders.count"> </span>
         </div>
+        <hr>
+        <table id="top-scores">
+          <tr data-expand="scores">
+            <td data-shows="appearance"></td>
+            <td data-shows="name"></td>
+            <td data-shows="score"></td>
+          </tr>
+        </table>
       </span>
       <canvas id="playfield">
       </canvas>
@@ -124,6 +132,7 @@
   <script>
     wuwei.play({
       playfield:  document.getElementById("playfield"),
+// XXX kill displays; use uiulator....... gar need to get the game object from wuwei.  maybe play can return it.
       displays: [
         document.getElementById("scoreboard"),
         //document.getElementById("settings"),
