@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>wuwei invaders</title>
-    <link rel="stylesheet" href="https://fbmstudios.net/fbm.css">
+    <link rel="stylesheet" href="https://fbmstudios.net/fbm.css"/>
 
     <meta name="keywords" content="Wu Wei,game,aliens,wasting time,text game,JS">
     <meta name="author" content="Chris Comparini">
@@ -116,11 +116,12 @@
       <div id="controllers" align="center">
         <virtual-game-button id="fire-p1" data-keys="Space,KeyW"> </virtual-game-button>
         <virtual-joystick id="joystick-p1" data-axis-count=1 data-key-left="ArrowLeft" data-key-right="ArrowRight"> </virtual-joystick>
-        <!--virtual-joystick id="joystick-p2" data-axis-count=1 data-key-left="KeyA" data-key-right="KeyS"> </virtual-joystick --!>
+        <!--virtual-joystick id="joystick-p2" data-axis-count=1 data-key-left="KeyA" data-key-right="KeyS"> </virtual-joystick -->
       </div>
     </div>
   </body>
   <script src="wuwei.js"></script>
+  <script src="sounds/sounds.js"></script>
   <script>
     wuwei.play({
       playfield:  document.getElementById("playfield"),
@@ -134,6 +135,7 @@
           fireButton: document.getElementById("fire-p1")
         }
       ],
+      sounds: sounds, // from sounds/sounds.js
     });
 
   </script>

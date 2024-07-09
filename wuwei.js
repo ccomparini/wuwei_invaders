@@ -32,7 +32,7 @@ var wuwei = function() {
             return new AudioContext();
         }
         catch(err) {
-            console.warn(`problem setting up audio: ${err}`);
+            console.error(`problem setting up audio: ${err}`);
         }
         return undefined;
     }
@@ -48,14 +48,10 @@ var wuwei = function() {
 
         paused: false,
 
-        audioContext: createAudioContext(),
-
-        sounds: {
-/*
-// this Audio is for the birds.  creates an element
-//  https://web.dev/articles/webaudio-intro
-            missileFired: new Audio('pfft.mp3'),
- */
+        get audioCtx() {
+            delete this.audioCtx;
+            this.audioCtx = createAudioContext();
+            return this.audioCtx;
         },
 
         //var field; // set by play();  is the html canvas on which we play

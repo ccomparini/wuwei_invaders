@@ -1,1 +1,1674 @@
-wuwei.html
+<html>
+  <head>
+    <title>wuwei invaders</title>
+    <style>/* https://fbmstudios.net/fbm.css imported via ./util/embedify ./wuwei.html */
+ 
+
+@font-face {
+   
+  font-family: 'vt-100';
+  src: url("/fonts/vt100-regular.otf") format("opentype");
+}
+
+* {
+  border-color: #c07000;
+}
+
+body {
+  background-color: #080420;
+  color: #f09000;
+  font-family: 'vt-100';
+  font-size: 16pt;
+}
+table {
+  table-layout: fixed;
+  background-color: #202050;
+  border-collapse: collapse;
+  border: solid #303080;
+  font-size: 16pt;
+}
+th {
+  border: solid #282870;
+  padding: 6px;
+  text-align: left;
+}
+td {
+  border: solid #303080;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+code {
+  font-family: 'vt-100';
+  font-size: 16pt;
+  color: #00c820;
+}
+a {
+  color: #8e38c6;
+}
+hr {
+  border-color: #c07000;
+  background-color: #c07000;
+}
+
+span[contenteditable] {
+  opacity: 0.5;
+}
+
+.footnote-ref {
+  color: #f0a030;
+  font-size: .75em;
+  vertical-align: super;
+  padding: 2px;
+}
+  
+
+</style>
+
+    <meta name="keywords" content="Wu Wei,game,aliens,wasting time,text game,JS">
+    <meta name="author" content="Chris Comparini">
+    <meta name="copyright" content="Christopher Comparini">
+    <meta name="description" content="Wu Wei invaders">
+    <meta name="category" content="games">
+    <script>/* virtual-game-controller.js imported via ./util/embedify ./wuwei.html */
+ 
+
+
+class VirtualGameController extends HTMLElement {
+
+  #subStyles = [ ];  
+  #innerStyle = "";   
+
+  #keyHandler;        
+  #keyControls = { }; 
+
+  constructor() {
+    super();
+    this.initFromDataConfig();
+  }
+
+  initFromDataConfig() {
+  }
+
+  appendCSS(css) {
+    this.#innerStyle.textContent += css;
+  }
+
+  defaultStyle() {
+    return '';
+  }
+
+  initGraphics() {
+    
+    
+    
+    this.style.minWidth  = "50px";
+    this.style.minHeight = "30px";
+    this.style.display   = 'inline-block';
+
+    
+    
+    
+    
+    
+    
+    
+    const shadowDOM = this.attachShadow({ mode: "open" });
+    this.#innerStyle = document.createElement("style");
+    shadowDOM.appendChild(this.#innerStyle);
+
+    this.appendCSS(this.defaultStyle());
+    this.applySubStyles();
+  }
+
+  createComponentElement(elClass, parentEl) {
+    const el = document.createElement("span");
+    el.setAttribute("class", elClass);
+    el.style.display = "inline-block";
+    el.style.position = "relative";
+
+    this.#subStyles.push(elClass);
+
+    if(parentEl) {
+      parentEl.appendChild(el);
+    } else {
+      this.shadowRoot.appendChild(el);
+    }
+
+    return el;
+  }
+
+  applySubStyles() {
+    const existingStyle = window.getComputedStyle(this);
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    var subStyle = "\n\n";
+    for(let subClass of this.#subStyles) {
+      subStyle += `.${subClass} {`;
+      
+      for(let realProp in this.style) {
+        if(!isNaN(realProp)) {
+          
+          
+          
+          
+          continue;
+        }
+
+        
+        
+        realProp = realProp.replace(/[A-Z]/, "-$&").toLowerCase();
+
+        let propVal = existingStyle.getPropertyValue(
+            `--${subClass}-${realProp}`
+        );
+        if(propVal) {
+          subStyle += `\n    ${realProp}: ${propVal};`;
+        }
+      }
+      
+      
+      let propVal = existingStyle.getPropertyValue(`--${subClass}`);
+      if(propVal) {
+          subStyle += `\n    background: ${propVal};`;
+      }
+      subStyle += "\n}\n";
+    }
+    this.#innerStyle.textContent += subStyle;
+  }
+
+  addKeyControl(keyname, func) {
+    const self = this;
+    this.#keyControls[keyname] = func;
+  }
+
+  connectedCallback() {
+    
+    this.initFromDataConfig();
+
+    this.initGraphics();
+
+    var self = this;
+    this.#keyHandler = function(ev) {
+        var func = self.#keyControls[ev.code];
+        if(func) func(ev.type === "keydown");
+    }
+    window.addEventListener('keyup',   this.#keyHandler, false);
+    window.addEventListener('keydown', this.#keyHandler, false);
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('keyup',   this.#keyHandler, false);
+    window.removeEventListener('keydown', this.#keyHandler, false);
+  }
+
+  adoptedCallback() {
+    console.log(`Joystick ${this} moved to new page.  whoa dude.`);
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    console.log(`Joystick attribute ${name} has changed from '${oldValue}' to '${newValue}'`);
+  }
+  
+
+}
+
+class VirtualJoystickElement extends VirtualGameController {
+  #stick;              
+  #ball;               
+  #axes = [ 0 ];
+  #maxSwing  = 23.44;  
+  #yRangePct = 100;     
+
+  get xPos() {
+    return this.#axes[0];
+  }
+
+  get yPos() {
+    return this.#axes[1];
+  }
+
+  setClientPos(clientX, clientY) {
+    let bounds = this.getBoundingClientRect();
+    if(clientX < bounds.x) clientX = bounds.x;
+    if(clientX > bounds.right) clientX = bounds.right;
+
+    if(clientY < bounds.y)      clientY = bounds.y;
+    if(clientY > bounds.bottom) clientY = bounds.bottom;
+
+    let relativeX = clientX - (bounds.x + bounds.width/2);
+    let relativeY = clientY - (bounds.y + bounds.height/2);
+
+    
+    this.setAxis(0, 2 * relativeX/bounds.width);
+    this.setAxis(1, 2 * relativeY/bounds.height);
+  }
+
+  
+  
+  get axes() {
+    return this.#axes;
+  }
+
+  setAxis(axis, val) {
+    if(axis < this.#axes.length) {
+      this.#axes[axis] = val;
+      switch(axis) {
+        case 0:
+          this.#stick.style.setProperty('rotate', `${this.#maxSwing * val}deg`);
+          break;
+        case 1:
+          this.#stick.style.setProperty('translateY', `${this.#yRangePct * val}%`);
+          this.#stick.style.setProperty('transform', `translateY(${this.#yRangePct * val}%)`);
+          break;
+      };
+    }
+  }
+
+  clearAxes() {
+    for(let ax = 0; ax < this.axes.length; ax++) {
+      this.setAxis(ax, 0.0);
+    }
+  }
+
+  initAxes(axisCount) {
+    if(!axisCount) {
+      axisCount = 1;
+    } else if(axisCount > 2) {
+      console.warn(
+        "Currently, VirtualGameController may have no more that 2 axes."
+      );
+      axisCount = 2;
+    } else if(axisCount <= 0) {
+      console.warn(
+        "Negative axis counts not supported in VirtualGameController."
+      );
+      axisCount = 1;
+    }
+
+    this.#axes = Array(axisCount).fill(0);
+  }
+
+  
+  initFromDataConfig() {
+    super.initFromDataConfig();
+
+    
+    
+    
+    
+    
+    
+    if(typeof this.dataset.axisCount !== 'undefined') {
+      this.initAxes(this.dataset.axisCount);
+    }
+    if(typeof this.dataset.xRangeDeg !== 'undefined') {
+      this.#maxSwing = this.dataset.xRangeDeg;
+    }
+    if(typeof this.dataset.yRangePct !== 'undefined') {
+      this.#yRangePct = this.dataset.yRangePct;
+    }
+    
+    if(typeof this.dataset.keyLeft !== 'undefined') {
+        this.addAxisKeyControl(this.dataset.keyLeft, 0, -1.0);
+    }
+    if(typeof this.dataset.keyRight !== 'undefined') {
+        this.addAxisKeyControl(this.dataset.keyRight, 0, 1.0);
+    }
+  }
+
+  defaultStyle() {
+    return `
+      .ball {
+        background: radial-gradient(#000000, #ae0f0f);
+        width: 500%;
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        top: 0;
+        left: 50%;
+        z-index: 5;
+      }
+      .stick {
+        width: 8%;
+        height: 100%;
+        background: radial-gradient(#000000, #777777); 
+        border-radius: 0 0 80% 80%;
+        color: #505050;
+        transform-origin: 50% 100%;
+        z-index: 3;
+      }
+      .slot {
+        color: black;
+        width: 100%;
+        height: 20%;
+        top: 100%;
+      }
+      .slot-front {
+        background: linear-gradient(#000000, #777777);
+        border: #a0a0a0 3px;
+        height: 50%;
+        bottom: -10%;
+        width: 100%;
+        z-index: 4;
+      }
+      .slot-back {
+        background: linear-gradient(#777777, #000000);
+        border-radius: 50vb 50vb 0 0;
+        border: #808080 3px;
+        height: 40%;
+        top: 0%;
+        width: 100%;
+        z-index: 2;
+      }
+    `;
+  }
+
+  initGraphics() {
+    super.initGraphics();
+
+    const slot       = this.createComponentElement("slot");
+    const slot_back  = this.createComponentElement("slot-back", slot);
+    const slot_front = this.createComponentElement("slot-front", slot);
+
+    this.#stick = this.createComponentElement("stick");
+    this.#ball  = this.createComponentElement("ball", this.#stick);
+
+    this.applySubStyles();
+  }
+
+  addAxisKeyControl(keyname, axis, value) {
+    const self = this;
+    this.addKeyControl(keyname, function(keyDown) {
+      if(keyDown) {
+        self.setAxis(axis, value);
+      } else if(self.#axes[axis] == value) {
+        self.setAxis(axis, 0);
+      }
+    });
+  }
+
+  constructor(axisCount) {
+    super();
+    this.initAxes(axisCount);
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    let self = this;
+    let mousehandler = function(ev) {
+      self.setClientPos(ev.clientX, ev.clientY);
+    }
+
+    this.addEventListener("mousemove",  mousehandler);
+    this.addEventListener("mouseenter", mousehandler);
+    this.addEventListener("mouseleave", mousehandler);
+
+    let touchHandler = function(ev) {
+      if(ev.targetTouches) {
+        if(ev.targetTouches.length >= 1) {
+          let pos = ev.targetTouches.item(0);
+          self.setClientPos(pos.clientX, pos.clientY);
+          ev.preventDefault(); 
+        } else {
+          self.clearAxes();
+        }
+      } else {
+        self.clearAxes();
+      }
+    };
+
+    this.addEventListener("touchstart", touchHandler);
+    this.addEventListener("touchmove",  touchHandler);
+
+    this.addEventListener("touchend", function(ev) {
+      self.clearAxes();
+    });
+
+  }
+}
+window.customElements.define("virtual-joystick", VirtualJoystickElement);
+
+
+
+
+
+class VirtualGameButtonElement extends VirtualGameController {
+  #button; 
+  #pressFrac = 0.0;
+
+  #transitionedDown = false;
+
+  transitionCount = 0; 
+
+  
+  
+  get value() {
+    return this.#pressFrac;
+  }
+
+  get pressed() {
+    
+    return this.value > 0.5;
+  }
+
+  get touched() {
+    return this.value > 0;
+  }
+
+  
+  
+  
+  get transitionedDown() {
+    if(this.#transitionedDown) {
+      this.#transitionedDown = false;
+      return true;
+    }
+
+    return false;
+  }
+
+  set value(frac) {
+    let oldPressed = this.pressed;
+    this.#pressFrac = frac;
+    if(!oldPressed && this.pressed) {
+      this.#transitionedDown = true;
+      this.transitionCount++;
+    }
+  }
+
+  initFromDataConfig() {
+    super.initFromDataConfig();
+    const self = this;
+
+    
+    
+    let keysStr = this.dataset.keys;
+    if(typeof keysStr === 'undefined') {
+        
+        keysStr = this.dataset.key;
+    }
+
+    if(typeof keysStr !== 'undefined') {
+      const separator = /,\s*/;
+      const keys = keysStr.split(separator);
+
+      for(const key of keys) {
+        this.addKeyControl(key, function(keyDown) {
+          if(keyDown) {
+            self.value = 1.0;
+          } else {
+            self.value = 0.0;
+          }
+        });
+      }
+    } 
+  }
+
+  constructor(axisCount) {
+    super();
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    let self = this;
+    this.addEventListener("mousedown", function(ev) {
+      self.value = 1.0;
+    });
+    this.addEventListener("mouseup", function(ev) {
+      self.value = 0.0;
+    });
+
+    let touchHandler = function(ev) {
+      if(ev.targetTouches) {
+        if(ev.targetTouches.length >= 1) {
+          
+          
+          self.value = 1.0;
+        }
+      }
+      ev.preventDefault(); 
+    };
+    this.addEventListener("touchstart", touchHandler);
+    this.addEventListener("touchmove",  touchHandler);
+    this.addEventListener("touchend", function(ev) {
+      self.value = 0;
+      ev.preventDefault(); 
+    });
+    this.addEventListener("touchcancel", function(ev) {
+      self.value = 0;
+    });
+  }
+
+  defaultStyle() {
+    return `
+      .frame {
+        background: linear-gradient(to right, #b00020, #580010);
+        border-radius: 50vb 50vb 50vb 50vb;
+        width: 70%;
+        height: 70%;
+      }
+      .button {
+        background: linear-gradient(to right, #880020, #440000);
+        border-radius: 50%;
+        width: 95%;
+        height: 70%;
+      }
+      .button:active {
+        transform: translate(0, 25%);
+      }
+    `;
+  }
+
+  initGraphics() {
+    super.initGraphics();
+    const frame  = this.createComponentElement("frame");
+    this.#button = this.createComponentElement("button", frame);
+  }
+}
+window.customElements.define("virtual-game-button", VirtualGameButtonElement);
+
+
+</script>
+    <style type="text/css">
+      div {
+        background-color: "#ffffff";
+        /*color: "red"; */
+      }
+      #stage {
+        text-align: center;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-gap: 2px;
+        grid-auto-rows: minmax(100px, auto);
+        width: 100%;
+        border: 10%;
+      }
+      #title {
+        font-size: xxx-large;
+        grid-column: 2 / 5;
+        grid-row: 1;
+      }
+      #scoreboard {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      #playfield {
+        column-count: 3;
+        grid-column: 2 / 5;
+        grid-row: 2;
+        align-items: center;
+        justify-content: center;
+        /* border-radius: 8%; */
+      }
+      #settings {
+        grid-column: 3;
+        grid-row: 2;
+      }
+      #joystick-p1 {
+        width: 250px;
+        height: 140px;
+/*
+        --ball-background: orange;
+        --ball: radial-gradient(#000000, #00ff2f); 
+        --slot: red;
+        --slot-back: purple;
+        --slot-front: purple;
+        --ball-border-radius: 0;
+        --stick: radial-gradient(#000000, #ffffff); 
+        --ball-border: green 10px;
+ */
+      }
+      #fire-p1 {
+        width: 160px;
+        height: 80px;
+        margin-left: 0;
+        margin-right: auto;
+      }
+      #joystick-p2 {
+        --ball: radial-gradient(#003f00, #00a02f); 
+        --slot-front: purple;
+      }
+      #controllers {
+        grid-column: 2 / 5;
+        grid-row: 3;
+        display: flex;
+        align-items: end;
+        min-height: 30%;
+      }
+      .scorer-name {
+        margin: 2px;
+        display: inline;
+        font-family: inherit;
+        font-size: inherit;
+        padding: none;
+        text-align: center;
+        width: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="title">
+	無爲
+      </div>
+      <span id="scoreboard">
+        <h3>楬</h3>
+        <div id="score-player" data-expand="players">
+          <span class="scorer-name" data-controls="name" contenteditable></span> :
+          <span data-shows="stats.score"> </span>
+        </div>
+        <div id="score-hive-mind" data-scope="hiveMind">
+          <span class="scorer-name" data-shows="name"> </span>:
+          <span data-shows="stats.score"> </span>
+        </div>
+        <hr>
+        <div>
+          波的入侵者:
+          <span data-shows="level"> </span>
+        </div>
+        <div id="num-bad-guys">
+          剩餘的侵略者:
+          <span data-shows="liveInvaders.count"> </span>
+        </div>
+      </span>
+      <canvas id="playfield">
+      </canvas>
+      <div id="controllers" align="center">
+        <virtual-game-button id="fire-p1" data-keys="Space,KeyW"> </virtual-game-button>
+        <virtual-joystick id="joystick-p1" data-axis-count=1 data-key-left="ArrowLeft" data-key-right="ArrowRight"> </virtual-joystick>
+        
+      </div>
+    </div>
+  </body>
+  <script>/* wuwei.js imported via ./util/embedify ./wuwei.html */
+
+var wuwei = function() {
+    
+    const dictionaries = {
+        'en': {
+            '楬': 'scores',
+            '侵略者': 'hive mind',
+            '波的入侵者:': 'wave: ',
+            '剩餘的侵略者:': 'remaining invaders: ',
+        },
+    };
+
+
+    let nextObjId = 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    const counterer = {
+        count: {
+            get: function() { return Object.keys(this).length; },
+        },
+    };
+
+    const game = {
+        objects: Object.create(null, counterer),
+        liveInvaders: Object.create(null, counterer),
+        players:  Object.create(null, counterer),
+        livePlayers:  Object.create(null, counterer),
+        invadersWon: false,
+
+        level: 0, 
+
+        paused: false,
+
+        
+        settings: {
+            missileSpeed: 0.2,
+            playerSpeed:  0.2,
+            language:     navigator.language,
+
+            get dictionary() {
+                return dictionaryFor(this.language);
+            }
+        },
+
+        over: function() {
+            fetch(`https://fbmstudios.net/wuwei/stats/game_over`)
+            for(const player of Object.values(this.players)) {
+                fetch(`https://fbmstudios.net/wuwei/stats/scores?name=${encodeURIComponent(player.name)}&score=${encodeURIComponent(player.stats.score)}`);
+            }
+        },
+    };
+
+    const fontSize = "16px"; 
+    const fieldWidthChars  = 40;
+    const fieldHeightChars = 24;
+
+    
+    
+    
+    
+    const updateInterval = 60/1000;
+
+    function initField(field) {
+        field.style.cursor = "none";
+        field.style.width  = fieldWidthChars + 'em';
+        field.style.height = fieldHeightChars + 'em';
+
+        
+        
+        field.width  = field.offsetWidth;
+        field.height = field.offsetHeight;
+
+        
+        
+        field.style['border-radius'] = `${0.08 * field.width}px`;
+
+        return field;
+    }
+
+    function cleanCtx() { 
+        var ctx = field.getContext('2d');
+        ctx.textAlign = "center";
+        
+        
+        ctx.fillStyle = window.getComputedStyle(field).getPropertyValue("color");
+        
+        ctx.font = ctx.font.replace(/^\d+px/, fontSize);
+
+        let fill = ctx.createLinearGradient(
+            field.width*.2, 0, field.width, field.height*2
+        );
+        fill.addColorStop(0, "rgb(23, 23, 23)");
+        fill.addColorStop(1, "rgb(4, 4, 4)");
+        ctx.backgroundFill = fill;
+
+        return ctx;
+    }
+
+    function clearScreen(ctx) {
+        var oldFill = ctx.fillStyle;
+
+        ctx.fillStyle = ctx.backgroundFill;
+        ctx.fillRect(0, 0, field.width, field.height);
+        ctx.fillStyle = oldFill;
+    }
+
+    class GameObjStats {
+        constructor() {
+            this.score  = 0;
+            this.misses = 0;
+
+            
+            this.kills  = { }; 
+        }
+    }
+
+    class GameObj {
+        constructor(ch, x, y) {
+            this.id = nextObjId++;
+
+            this.name = new.target.name + " " + this.id;
+            this.stats = new GameObjStats();
+
+            this.pointValue = 0;
+
+            this.isAlive = true;
+
+            this.appearance = ch;
+            this.x  = x;
+            this.y  = y;
+            this.dx = 0;
+            this.dy = 0;
+
+            
+
+            
+            
+            
+            
+            
+            var ctx = cleanCtx();
+            var measurements = ctx.measureText(this.appearance);
+            
+            
+            
+            
+            
+            
+            this.minX = -Math.abs(measurements.actualBoundingBoxLeft);
+            this.maxX =  measurements.actualBoundingBoxRight;
+            this.minY = -measurements.actualBoundingBoxAscent;
+            this.maxY =  measurements.actualBoundingBoxDescent;
+
+            game.objects[this.id] = this;
+        }
+
+        behave(dt, frameNum) {
+            
+            if(this.y + this.minY <= 0) {
+                this.hitSky(dt);
+            } else if(this.y + this.maxY > field.clientHeight) {
+                this.hitGround(dt);
+            }
+
+            
+            if(this.x + this.minX <= 0) {
+                this.hitSide(dt);
+            } else if(this.x + this.maxX > field.clientWidth) {
+                this.hitSide(dt);
+            }
+
+            
+            
+            this.x += this.dx * dt;
+            this.y += this.dy * dt;
+        }
+
+        credit(numPoints) {
+            this.stats.score += Math.round(numPoints);
+            if(this.master) {
+                
+                this.master.credit(numPoints);
+            }
+        }
+
+        creditKill(victim) {
+            this.stats.score += victim.pointValue;
+            if(!this.stats.kills[victim.appearance]) {
+                this.stats.kills[victim.appearance] = 1;
+            } else {
+                this.stats.kills[victim.appearance]++;
+            }
+
+            
+            if(this.master) {
+                this.master.creditKill(victim);
+            }
+        }
+
+        hitSky(dt) {
+            this.destroy();
+        }
+
+        hitGround(dt) {
+            this.destroy();
+        }
+
+        hitSide(dt) {
+            this.destroy();
+        }
+
+        draw(ctx) {
+            ctx.fillText(this.appearance, this.x, this.y);
+
+            if(this.debugBounding) {
+                var oldFill = ctx.fillStyle;
+                ctx.fillStyle = 'green';
+                ctx.strokeRect(
+                    this.x + this.minX, this.y + this.minY,
+                    this.maxX - this.minX, this.maxY - this.minY
+                );
+                ctx.fillStyle = oldFill;
+            }
+        }
+
+        collidesWith(otherObj, dt) {
+            
+            
+            
+            
+            
+            return null;
+        }
+
+        destroy() {
+            delete game.objects[this.id];
+        }
+
+    }
+
+    class Missile extends GameObj {
+        constructor(x, y, dx, dy, vsGroup, master) {
+            if(dy > 0)
+                super("↓", x, y);
+            else
+                super("↑", x, y);
+
+            this.dx = dx;
+            this.dy = dy;
+            this.vsGroup = vsGroup;
+            this.master = master;
+        }
+
+        behave(dt, frameNum) {
+            super.behave(dt, frameNum);
+
+            for(let target of Object.values(this.vsGroup)) {
+                if(this.collidesWith(target, dt)) {
+                    target.destroy();
+                    this.creditKill(target);
+                    this.destroy();
+                }
+            }
+        }
+
+        draw(ctx) {
+            super.draw(ctx);
+            if(this.debugBounding) {
+                var oldFill = ctx.fillStyle;
+                ctx.fillStyle = this.color || "red";
+                ctx.fillRect(this.x-2, this.y-2, 5, 5);
+                ctx.fillStyle = oldFill;
+            }
+        }
+
+        collidesWith(otherObj, dt) {
+            
+            
+            var hit = null;
+            if(otherObj.x + otherObj.minX <= this.x) {
+                if(otherObj.x + otherObj.maxX >= this.x) {
+                    
+                    
+                    
+                    if(otherObj.y + otherObj.maxY >= this.y) {
+                        if(otherObj.y + otherObj.minY <= this.y) {
+                            hit = otherObj;
+                        }
+                    }
+                }
+            }
+            return hit;
+        }
+
+        destroy() {
+            super.destroy();
+            if(!this.destroyQuietly) new Boom(this.x, this.y);
+        }
+
+        hitSky(dt) {
+            
+            
+            this.credit(-3);
+
+            this.destroyQuietly = true;
+            super.hitSide();
+        }
+
+        hitSide(dt) {
+            this.destroyQuietly = true;
+            super.hitSide();
+        }
+    }
+
+    const invaderXStep   = 10;
+    const invaderYStep   = 16;
+    const invaderXMargin = 10;
+    class HiveMind extends GameObj {
+        constructor(x, y) {
+            super('先生们，您所有的基地都属于我们', x, y);
+            this.acknowledgedOrders = 0;
+            this.minInvaderX = Infinity;
+            this.maxInvaderX = 0;
+            this.lastReportedFrame = -1;
+            this.changeXThus = invaderXStep;
+            this.changeYThus = 0;
+            this.pointValue = Infinity;
+            
+
+            
+            
+            
+            this.reloadRangeMs = 50000;
+            this.name = translate("侵略者", game.settings.dictionary);
+
+            this.spawnMinions();
+        }
+
+        commandMinions(dt, frameNum) {
+
+            
+            
+            
+            let changeDirection = 
+                (game.livePlayers.count == 0) ||
+                (this.changeXThus + this.maxInvaderX > field.width - invaderXMargin) ||
+                (this.changeXThus + this.minInvaderX < invaderXMargin);
+
+            if(changeDirection) {
+                this.changeXThus = -this.changeXThus;
+                this.changeYThus = invaderYStep;
+            } else {
+                this.changeYThus = 0;
+            }
+
+            if(game.liveInvaders.count === 0) {
+                
+                
+                this.reloadRangeMs *= 0.75;
+                this.spawnMinions();
+
+            }
+
+            if(!this.nextRegroupCount)
+                this.nextRegroupCount = game.liveInvaders.count * .5;
+
+            if(game.liveInvaders.count < this.nextRegroupCount) {
+                
+                
+                
+                this.nextRegroupCount = this.nextRegroupCount * .5;
+                for (let inv of Object.values(game.liveInvaders)) {
+                    inv.nextShotMs = inv.reloadMs();
+                }
+            }
+        }
+
+        behave(dt, frameNum) {
+            if(game.invadersWon) {
+                
+                this.changeXThus = 0;
+                this.changeYThus = 0;
+
+                
+                this.x = field.clientWidth  / 2;
+                this.y = field.clientHeight / 2;
+
+            } else if(this.acknowledgedOrders >= game.liveInvaders.count) {
+                this.commandMinions(dt, frameNum);
+                this.acknowledgedOrders = 0;
+            }
+        }
+
+        spawnMinions(rows) {
+            if(!rows) rows = 4;
+
+            
+            var charWidth  = field.clientWidth  / fieldWidthChars;
+            var charHeight = field.clientHeight / fieldHeightChars;
+            for(let iy = 1; iy < rows + 1; iy++) {
+                
+                
+                
+                
+                for(let ix = 1; ix < fieldWidthChars - 2; ix += 2) {
+                    new Invader(ix * charWidth, iy * charHeight, this);
+                }
+            }
+            
+            this.changeXThus = invaderXStep;
+            this.changeYThus = 0;
+
+            
+            
+            
+            
+            if(game.livePlayers) {
+                for(const player of Object.values(game.livePlayers)) {
+                    player.credit(2500  * game.level);
+                }
+            }
+
+            game.level++;
+        }
+
+        learnAboutMinion(minion, frameNum) {
+            if(frameNum > this.lastReportedFrame) {
+                this.maxInvaderX = 0;
+                this.minInvaderX = Infinity;
+                this.lastReportedFrame = frameNum;
+            }
+
+            if(minion.x > this.maxInvaderX)
+                this.maxInvaderX = minion.x;
+
+            if(minion.x < this.minInvaderX)
+                this.minInvaderX = minion.x;
+
+            this.acknowledgedOrders++;
+        }
+    }
+
+    class Invader extends GameObj {
+        constructor(x, y, master) {
+            super("無", x, y);
+            this.master = master;
+            this.nextMoveMs = 0;
+            this.minReloadMs   = 1000;
+            this.reloadRangeMs = master.reloadRangeMs;
+            
+            this.nextShotMs    = this.reloadMs();
+            this.pointValue    = 100;
+            game.liveInvaders[this.id] = this;
+        }
+
+        reloadMs() {
+            let rand = Math.random() * Math.random();
+            return rand * this.reloadRangeMs + this.minReloadMs;
+        }
+
+        behave(dt, frameNum) {
+            this.nextMoveMs -= dt;
+            if(this.nextMoveMs <= 0) {
+                if(this.appearance === "無") {
+                    this.appearance = "爲";
+                } else {
+                    this.appearance = "無";
+                    this.x += this.master.changeXThus;
+                    this.y += this.master.changeYThus;
+                    this.master.learnAboutMinion(this, frameNum);
+
+                    
+                    
+                    if(this.master.changeYThus) {
+                        this.credit(4 * this.y/invaderYStep);
+                    }
+                }
+
+                this.nextMoveMs = 500;
+            }
+
+            super.behave(dt, frameNum); 
+
+            this.nextShotMs -= dt;
+            if(this.nextShotMs <= 0) {
+                if(!game.invadersWon && game.livePlayers.count) {
+                    this.nextShotMs = this.reloadMs();
+                    
+                    new Missile(
+                        this.x, this.y,
+                        0, game.settings.missileSpeed,
+                        game.livePlayers, this
+                    );
+                }
+            }
+        }
+
+        destroy() {
+            super.destroy();
+            delete game.liveInvaders[this.id];
+        }
+
+        hitGround() {
+            if(!game.invadersWon) {
+                game.over();
+
+                game.invadersWon = true;
+            }
+        }
+    }
+
+    class Boom extends GameObj {
+        constructor(x, y) {
+            super("⬝", x, y);
+            this.nextMoveMs = 0;
+        }
+
+        behave(dt, frameNum) {
+            this.nextMoveMs -= dt;
+            if(this.nextMoveMs <= 0) {
+                this.nextMoveMs = 100;
+                if(this.appearance === "⬝") {
+                    this.appearance = "⭑";
+                } else if(this.appearance === "⭑") {
+                    this.appearance = "⭓";
+                } else if(this.appearance === "⭓") {
+                    this.appearance = "⬤";
+                } else if(this.appearance === "⬤") {
+                    this.appearance = "⤫";
+                } else if(this.appearance === "⤫") {
+                    this.appearance = "⟳";
+                } else if(this.appearance === "⟳") {
+                    this.appearance = "⥁";
+                } else if(this.appearance === "⥁") {
+                    this.appearance = "⍟";
+                } else if(this.appearance === "⍟") {
+                    this.destroy();
+                } else {
+                    this.appearance = "⬝";
+                }
+            }
+        }
+    }
+
+    function savedData(name) {
+        const got = localStorage.getItem(name);
+        if(got) {
+            try {
+                var result = JSON.parse(got)
+            }
+            catch(error) {
+                console.log(`${error} in '${got.value}'`);
+            }
+        }
+        return result;
+    }
+
+    function save(name, val) {
+        localStorage.setItem(name, JSON.stringify(val));
+    }
+
+    class Player extends GameObj {
+        constructor(controller, x, y) {
+            const saved = savedData("player-settings");
+            super(saved?.appearance || "🙏", x, y);
+            game.players[this.id] = this;
+            game.livePlayers[this.id] = this;
+
+            this.fireButton = controller.fireButton;
+            this.joystick   = controller.joystick;
+            this.name       = saved?.name || `Player ${game.players.count}`;
+            this.pointValue = 5000;
+        }
+
+        get settings() {
+            return {
+                appearance: this.appearance,
+                name:       this.name,
+            }
+        }
+
+        get name() {
+            return this._name;
+        }
+
+        set name(newName) {
+            this._name = newName;
+            
+            
+            
+            
+            
+            save("player-settings", this.settings);
+        }
+
+        draw(ctx) {
+            if(!this.destroyed)
+                super.draw(ctx);
+        }
+
+        behave(dt, frameNum) {
+            if(this.destroyed)
+                return;
+
+            if(this.joystick) {
+                this.dx = this.joystick.axes[0] * game.settings.playerSpeed;
+            }
+
+            if(this.fireButton.transitionedDown) {
+                this.isShooting = true;
+            }
+
+            if(this.isShooting) {
+                new Missile(
+                    this.x, this.y, 0,
+                    -game.settings.missileSpeed,
+                    game.liveInvaders, this
+                );
+                this.isShooting = false;
+            }
+
+            super.behave(dt, frameNum);
+        }
+
+        destroy() {
+            fetch(`https://fbmstudios.net/wuwei/stats/dead?name=${encodeURIComponent(this.name)}&score=${encodeURIComponent(this.stats.score)}`);
+            super.destroy();
+            delete game.livePlayers[this.id];
+        }
+
+        hitSide(dt) {
+            this.dx = 0;
+            if(this.x > field.clientWidth / 2) {
+                this.x  = field.clientWidth - this.maxX - 1;
+            } else {
+                this.x  = -this.minX + 1;
+            }
+        }
+    }
+
+    var showers = [ ];
+
+    
+    
+    
+    function expandElements(protoElement, scope) {
+        if(!protoElement) return;
+
+        let dataset = protoElement.dataset || { };
+        let expand = dataset.expand;
+
+        scope = rescope(protoElement, scope);
+
+        if(expand) {
+            
+            
+            let parsedFrom = parseDisplayDef(protoElement, expand, scope);
+
+            
+            
+            
+            delete protoElement.dataset.expand;
+
+            
+            
+            
+            
+            
+            let objs = parsedFrom.containingObject[parsedFrom.variable];
+            for (const key in objs) {
+                
+                let newElem = protoElement.cloneNode(true);
+
+                
+                
+                newElem.id = newElem.id + "-" + key;
+
+                
+                newElem.dataset.scope = expand + "." + key;
+
+                protoElement.parentElement.insertBefore(newElem, protoElement);
+            }
+
+            
+            
+            protoElement.style.display = 'none';
+        }
+
+        let kids = protoElement.children;
+        if(!kids) return;
+        for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
+            expandElements(kid, scope);
+        }
+    }
+
+    
+    
+    
+    function parseDisplayDef(elem, variable, scope) {
+        variable.replace(/[^A-Za-z_.]/g, "");
+        let parts = variable.split(".");
+
+        let obj = scope;
+
+        for(let pi = 0; pi < parts.length - 1; pi++) {
+            if(!obj) {
+                console.log("no such variable '" + parts[pi] + "' in '" + variable + "'");
+                break;
+            }
+            obj = obj[parts[pi]];
+        }
+
+        if(!obj) {
+            obj = new Map;
+            console.log("could not parse display def for " + variable);
+        }
+
+        return {
+            element: elem,
+            containingObject: obj,
+            variable: parts[parts.length - 1],
+        };
+    }
+
+    function rescope(elem, existingScope) {
+        if(elem.dataset && elem.dataset.scope) {
+            let ns = parseDisplayDef(elem, elem.dataset.scope, existingScope);
+            return ns.containingObject[ns.variable];
+        } else {
+            return existingScope;
+        }
+    }
+
+    function bindDisplay(display, scope) {
+        if(!display) return;
+        if(!display.dataset) return;
+
+        scope = rescope(display, scope);
+ 
+        
+        
+        
+        
+        
+        
+        
+        let shows = display.dataset.shows || display.dataset.controls;
+        let ctrl  = display.dataset.controls;
+        if(shows) {
+            showers.push(parseDisplayDef(display, shows, scope));
+            delete display.dataset.shows; 
+        }
+
+        if(ctrl) {
+            let def = parseDisplayDef(display, ctrl, scope);
+            showers.push(def);
+            let el = def.element;
+            el.contenteditable = true; 
+            el.addEventListener('change', function(ev) { updateControl(def) });
+            el.addEventListener('input',  function(ev) { updateControl(def) });
+            delete display.dataset.controls;
+        }
+
+        
+        
+        
+        
+        let kids = display.children;
+        for (let ci = 0; ci < kids.length; ci++) {
+            bindDisplay(kids[ci], scope);
+        }
+    }
+
+    function updateControl(def) {
+        let el = def.element;
+        if(el.innerText === undefined) {
+            def.containingObject[def.variable] = el.value;
+        } else {
+            def.containingObject[def.variable] = el.innerText;
+        }
+    }
+
+    function updateDisplays() {
+        for (let di = showers.length - 1; di >= 0; di--) {
+            let shower = showers[di];
+            let val = shower.containingObject[shower.variable];
+            if (typeof val === "function") {
+                val = val();
+            }
+            if(document.activeElement !== shower.element) {
+                shower.element.textContent = val;
+                shower.element.value = val; 
+                if(val !== undefined) {
+                    shower.element.style.width = val.length + "ch";
+                }
+            }
+        }
+    }
+
+    function serverSocket() {
+        const url = 'ws://' + location.hostname + ':29234/';
+        const socket = new WebSocket(url);
+
+        socket.onerror = function (ev) {
+            console.error('Error on socket to ' + url + ': ' + ev);
+        };
+
+        socket.onmessage = function (ev) {
+            console.log('Message from ' + url + ': ' + ev.data);
+        };
+
+        socket.onclose = function(ev) {
+            console.log('closed ' + url + ': ' + ev);
+        };
+
+        socket.onopen = function (ev) {
+            socket.send('Hello Server!');
+        };
+
+        return socket;
+    }
+
+
+    function translate(str, dictionary) {
+        if(dictionary[str] !== undefined) {
+           str = dictionary[str];
+        } 
+        return str;
+    }
+
+    function dontTranslateTag(elem) {
+        switch(elem.tagName) {
+            case 'HEAD':   return true;
+            case 'SCRIPT': return true;
+            case 'STYLE':  return true;
+        }
+
+        return false;
+    }
+
+    function translateElementText(elem, dictionary) {
+        if(dontTranslateTag(elem)) {
+            
+            
+            return;
+        }
+
+        if(elem.nodeType === Node.TEXT_NODE) {
+            const tc = elem.textContent?.trim();
+            elem.textContent = translate(tc, dictionary);
+        }
+
+        for(let kid of elem.childNodes) {
+            translateElementText(kid, dictionary);
+        }
+    }
+
+    function dictionaryFor(lang) {
+        if(lang) {
+            if(dictionaries[lang])
+                return dictionaries[lang];
+
+            lang = lang.substring(0, 2); 
+            return dictionaries[lang];
+        }
+
+        return undefined;
+    }
+
+
+    return {
+        'pause': function(newval) {
+            fetch('https://fbmstudios.net/wuwei/stats/pause');
+            if(newval === undefined) {
+                game.paused = !game.paused;
+            } else {
+                game.paused = newval;
+            }
+        },
+
+        'play': function(setup) {
+            
+            const dict = dictionaryFor(navigator.language);
+            if(dict) {
+                translateElementText(document, dict);
+            } 
+
+            fetch('https://fbmstudios.net/wuwei/stats/play');
+
+            field = initField(setup.playfield);
+
+            
+            
+            
+            
+            
+            
+            game.hiveMind = new HiveMind(0, -10000); 
+
+            
+            const playerYPos = field.clientHeight * .9;
+            const p1 = new Player(
+                setup.controllers[0], field.clientWidth/3, playerYPos
+                
+            );
+
+            window.addEventListener("beforeunload", () => {
+                fetch('https://fbmstudios.net/wuwei/state/done');
+            });
+
+            
+            
+            
+            window.addEventListener('keyup', (ev) => {
+                if(ev.code === 'KeyP')
+                    this.pause();
+            });
+
+            
+            
+            
+            setup.displays.forEach(function(el) { expandElements(el, game); });
+            setup.displays.forEach(function(el) { bindDisplay(el, game); });
+            let lastUpdate = Date.now();
+            let frameNum = 0;
+            var ctx = cleanCtx();
+            window.setInterval(function() {
+                updateDisplays();
+
+                var now = Date.now();
+                if(!game.paused) {
+                    var deltaT = now - lastUpdate;
+                    for (let obj of Object.values(game.objects)) {
+                        obj.behave(deltaT, frameNum);
+                    }
+
+                    
+                    
+                    
+                    clearScreen(ctx);
+                    for (let obj of Object.values(game.objects)) {
+                        obj.draw(ctx);
+                    }
+
+                    frameNum++;
+               }
+               lastUpdate = now;
+            }, updateInterval);
+        }
+    };
+}();
+
+
+</script>
+  <script>
+    wuwei.play({
+      playfield:  document.getElementById("playfield"),
+      displays: [
+        document.getElementById("scoreboard"),
+        //document.getElementById("settings"),
+      ],
+      controllers: [
+        {
+          joystick: document.getElementById("joystick-p1"),
+          fireButton: document.getElementById("fire-p1")
+        }
+      ],
+    });
+
+  </script>
+</html>
