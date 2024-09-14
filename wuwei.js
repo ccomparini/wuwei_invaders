@@ -952,6 +952,8 @@ insertSorted(foo, Math.floor(Math.random()*40));
 // end more translation stuff
 
     return {
+        'game': game,
+
         'pause': function(newval) {
             fetch('https://fbmstudios.net/wuwei/stats/pause');
             if(newval === undefined) {

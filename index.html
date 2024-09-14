@@ -701,6 +701,415 @@ window.customElements.define("virtual-game-button", VirtualGameButtonElement);
       </div>
     </div>
   </body>
+  <script>/* https://fbmstudios.net/uiulars/uiulator.js imported via ./util/embedify wuwei.html */
+"use strict"
+
+ 
+
+ 
+var uiulator = function(dataSource, elements, options) {
+
+    options ||= { };
+
+    
+    
+    
+    if(typeof elements === "undefined") {
+        elements = [ document ];
+    }
+
+    
+    if(typeof elements.forEach === "undefined") {
+        
+        
+        
+        let elst = Object.prototype.toString.call(elements);
+        if(/HTMLCollection/.test(elst)) {
+            
+            elements = Array.prototype.slice.call(elements);
+        } else {
+            
+            
+            
+            elements = [ elements ];
+        }
+    }
+
+    
+    
+    
+    
+    
+    const controlOrder = [
+        "scope", 
+        "expands",
+        "controls",
+        "shows",
+    ];
+
+    
+    const origStyles     = Symbol();
+    const generatedElems = Symbol();
+    const noSplatValue   = Symbol();
+    const noSplatText    = Symbol();
+
+    
+    
+    
+    const nowShowing = Symbol();
+
+    
+    
+    
+    function parseVarSpec(vs) {
+        const result = { varPath: [ ] };
+        if(vs !== undefined) {
+            let ppart;
+            [ ppart, result.scale ] = vs.split('*');
+
+            
+            
+            
+            if(ppart.length) {
+                result.varPath = ppart.split('.');
+            }
+
+            
+            if(result.scale !== undefined) {
+                result.scale = Number.parseFloat(result.scale);
+            }
+        }
+        return result;
+    }
+
+    function evaluate(data, spec) {
+        if(data === undefined || spec === undefined)
+            return data;
+
+        for(const varr of spec.varPath) {
+            if(data[varr] == undefined)
+                return undefined;
+
+            data = data[varr];
+        }
+
+        if(spec.scale !== undefined)
+            data = data*spec.scale;
+
+        return data;
+    }
+
+    function rescopeClone(clone, key) {
+        
+        
+        if(clone.id !== "")
+            clone.id = clone.id + "-" + key;
+
+        if(clone.value === '@key') {
+            clone.value = key;
+            clone[noSplatValue] = true;
+        }
+
+        if(clone.dataset?.shows === '@key') {
+            clone.innerText     = key;
+            clone.dataset.shows = "";  
+            clone[noSplatText] = true;
+        }
+
+        for(const kid of clone.childNodes) {
+            rescopeClone(kid, key);
+        }
+    }
+
+    function cloneAndExpand(elem, data, key) {
+        let newElem = elem.cloneNode(true);
+        rescopeClone(newElem, key);
+
+        for(const stel in elem[origStyles]) {
+            newElem.style[stel] = elem[origStyles][stel];
+        }
+
+        
+        
+        newElem.dataset.scope = key;
+        elem.parentElement.insertBefore(newElem, elem);
+
+        return newElem;
+    }
+
+    function setExpanderStyle(elem, styleOverride) {
+        if(!elem[origStyles]) {
+            elem[origStyles] = { };
+        }
+
+        for(const key in styleOverride) {
+            elem[origStyles][key] = elem.style[key];
+            elem.style[key]       = styleOverride[key];
+        }
+    }
+
+    function keyForElement(elem) {
+        const ds = elem.dataset;
+        if(ds) {
+            for(const marker of controlOrder) {
+                if(ds[marker] !== undefined)
+                    return ds[marker];
+            }
+        }
+        return undefined;
+    }
+
+    
+    
+    function afterEvents(fun) {
+        setTimeout(fun);
+    }
+
+    function onControlModified(ev) {
+        const elem = ev.target;
+        const data = elem[nowShowing];
+        const vs = parseVarSpec(elem.dataset.shows);
+        const specificVar = vs.varPath.pop();
+        const container = evaluate(data, vs);
+        if(container === undefined) {
+            console.warn(
+                `Can't set ${varPath}[${specificVar}] because it's undefined`
+            );
+        } else {
+            var oldVal = container[specificVar];
+            if(elem.type === "checkbox") {
+                
+                container[specificVar] = elem.checked;
+            } else if(elem.value !== undefined) {
+                container[specificVar] = elem.value;
+            } else {
+                container[specificVar] = elem.innerText;
+            }
+        }
+
+        if(options['update-on-change']) {
+            afterEvents(() => { updateDisplays(); });
+        }
+
+        if(options['oncontrolchanged']) {
+            afterEvents(() => {
+                options['oncontrolchanged'](
+                    ev, elem, container, specificVar, oldVal
+                );
+            });
+        }
+    }
+
+    function isValueWritable(elem) {
+        return elem.value !== undefined && !elem[noSplatValue];
+    }
+
+    function isTextWritable(elem) {
+        return !elem[noSplatText];
+    }
+
+    function doShow(elem, val) {
+        if(elem.type === "radio") {
+            
+            
+            
+            
+            
+            
+            
+            
+            elem.checked = val === elem.value;
+        } else if(elem.type === "checkbox") {
+            
+            elem.checked = !!val;
+        } else if(elem.tagName === "OPTION") {
+            
+            
+            if(isValueWritable(elem))
+                elem.value = val;
+            if(isTextWritable(elem))
+                elem.textContent = val;
+        } else if(elem.tagName === "LI") {
+            
+            
+            
+            
+            if(isTextWritable(elem))
+                elem.textContent = val;
+        } else {
+            
+            
+            
+            if(document.activeElement !== elem) {
+                if(isValueWritable(elem)) {
+                    
+                    elem.value = val;
+                } else if(isTextWritable(elem)) {
+                    
+                    elem.textContent = val;
+                }
+            }
+        }
+    }
+
+    
+    
+    function iterableInteger(integer) {
+      return function*() {
+        let index = 0;
+        while(index < integer) {
+          yield index++;
+        }
+      }();
+    }
+
+    function expanderKeys(data) {
+
+        if(typeof(data) === 'number') {
+            
+            
+            
+            
+            return iterableInteger(Math.round(data));
+        }
+
+        return Object.keys(data);
+    }
+
+    
+    const upFunc = {
+        scope: function(elem, data, vs) {
+            
+            return [ elem, evaluate(data, parseVarSpec(vs)) ];
+        },
+        expands: function(elem, data, vs) {
+            
+            if(!elem[origStyles]) {
+                setExpanderStyle(elem, { display: 'none' });
+            }
+
+            
+            data = evaluate(data, parseVarSpec(vs));
+
+            const oldGenEls = elem[generatedElems] ?? { };
+            const newGenEls = { };
+            if(data) {
+                if(typeof(data) === 'string') {
+                    
+                    
+                    data = [ data ];
+                }
+
+                
+                
+                
+                const oldExpands = elem.dataset.expands;
+                delete elem.dataset.expands;
+                for(const key of expanderKeys(data)) {
+                    if(oldGenEls[key]) {
+                        
+                        newGenEls[key] = oldGenEls[key];
+                        delete oldGenEls[key];
+                    } else {
+                        
+                        newGenEls[key] = cloneAndExpand(elem, data, key);
+                    }
+                    updateElements(newGenEls[key], data);
+
+                }
+                elem.dataset.expands = oldExpands;
+
+            }
+            
+            
+            for(const key in oldGenEls) {
+                oldGenEls[key].remove();
+            }
+            elem[generatedElems] = newGenEls;
+
+            
+            
+            
+            return [ undefined, undefined ];
+        },
+        shows: function(elem, data, vs) {
+            elem[nowShowing] = data;
+            doShow(elem, evaluate(data, parseVarSpec(vs)));
+            return [ elem, data ];
+        },
+        controls: function(elem, data, vs) {
+
+            
+            elem.dataset.shows = vs;
+
+            
+            
+            
+            
+            
+            
+            if(options['control-on-submit']) {
+                elem.addEventListener('change', onControlModified);
+            } else {
+                elem.addEventListener('input',  onControlModified);
+            }
+
+            
+            
+            delete elem.dataset.controls;
+
+            return [ elem, data ];
+        },
+    }
+
+    
+    const breakOn = {
+        
+    };
+
+    
+    function updateElements(elem, data) {
+        const ds = elem.dataset;
+        if(ds) {
+            for(const updater of controlOrder) {
+                if(ds[updater] !== undefined) {
+                    if(breakOn[ds[updater]]) {
+                        console.log(`give me a break on ${updater} ${ds[updater]}`);
+                    }
+                    [elem, data] = upFunc[updater](elem, data, ds[updater]);
+                }
+                if(!elem) break;
+            }
+        }
+
+        if(elem) {
+            for(const kid of elem.childNodes) {
+                updateElements(kid, data);
+            }
+        }
+    }
+
+    function updateDisplays() {
+        for(const elem of elements) {
+            updateElements(elem, dataSource);
+        }
+    }
+
+    updateDisplays();
+
+    if(options['poll-interval'] !== undefined) {
+        window.setInterval(updateDisplays, options['poll-interval']);
+    }
+
+    return {
+        version: 0.3,
+        initialOptions: options,
+         
+        update: updateDisplays,
+    };
+
+};
+</script>
   <script>/* wuwei.js imported via ./util/embedify wuwei.html */
 
 var wuwei = function() {
