@@ -13,18 +13,48 @@
   "soundBytes".
 
 """
+# XXX ok the output here is way too big.
+# making this work at all first, but, perhaps try:
+#  - write this all as a webassembly module (though that
+#    would still need to be embedded somehow!)
+#  - put the actual binary data in strings, with char escaping
+#    ^^ if we do this it can 
+#  - if the above suck, then -don't- embed the music and
+#    instead stream it from fbmstudios.net and accept that
+#    you don't get any music if you're playing offline.
 import math
 import os
+import subprocess
 import sys
 import warnings
 
 from pathlib import Path
 
+# returns a filehandle for the data in the named file,
+# to be read in mp3 format.
+# Raises an OSError if the file cannot be opened or if
+# the data cannot be converted to mp3.
+def open_as_mp3(filename):
+    basename, ext = os.path.splitext(filename)
+    match ext:
+        case '.mp3':
+            return open(filename, 'rb')
+        case '.m4a':
+            # -aq 9 sets the audio quality lower, but that barely reduces
+            # the output size.
+            #cmd = [ 'ffmpeg', '-i', filename, '-vn', '-f', 'mp3', '-aq', '9', '-' ]
+            cmd = [ 'ffmpeg', '-i', filename, '-vn', '-f', 'mp3', '-' ]
+            return subprocess.Popen(cmd).stdout
+            # return os.popen(cmd, mode='rb') # , buffering=0)
+
+    # XXX OSError isn't really appropriate here..
+    raise OSError(f"Unsupported format '{ext}' for {filename}")
+
 def main():
     soundfiles = [ ]
     for root, dirs, files in os.walk('.'):
         for name in files:
-            if name.endswith('.mp3'):
+            if name.endswith(('.mp3', '.m4a')):
                 fn = os.path.relpath(os.path.join(root, name))
                 soundfiles.append(fn)
 
@@ -47,9 +77,9 @@ def main():
         if sn in soundnames:
             warn(f"sounds {file} and {soundnames[sn]} both have name {sn}")
 
-        with open(file, "rb") as mp3:
+        with open_as_mp3(file) as soundfile:
             p_i(1, f"'{sn}': new Uint8Array([  // {file}")
-            mp3bytes = mp3.read()
+            mp3bytes = soundfile.read()
             lend = 0
             for lnum in range(0, math.floor(len(mp3bytes)/bytes_per_line)):
                 lstart = lnum * bytes_per_line
@@ -63,3 +93,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
