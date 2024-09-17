@@ -57,10 +57,16 @@ class embedder(HTMLParser):
     def __init__(self, source_file):
         super().__init__()
         self.source_file = source_file
-        with open(source_file, "r") as srcf:
-            self.source = srcf.read()
+        try:
+            with open(source_file, "r") as srcf:
+                self.source = srcf.read()
+        except Exception as e:
+            self.warn(f"can't read source file '{source_file}': {e}")
         self.base_path = os.path.dirname(os.path.realpath(source_file))
         self.next_close_tag = ''
+
+    def warn(self, msg):
+        print(f"{self.source_file}:{self.getpos()[0]} Warning: {msg}", file=sys.stderr)
 
     def write(self):
         self.feed(self.source)
@@ -76,17 +82,21 @@ class embedder(HTMLParser):
     def fetch_tag_contents(self, tag, orig_url):
         parsed_url = self.url_for_tag_contents(tag, orig_url)
         url = urllib.parse.urlunparse(parsed_url) # normalized url
-        reply = urllib.request.urlopen(url)
+        contents = ""
+        try:
+            reply = urllib.request.urlopen(url)
 
-        charset = reply.headers.get_content_charset()
-        if not charset:  # this covers local files, but not really grr...
-            print(f"forcing charset for {url} ({orig_url})", file=sys.stderr)
-            charset = 'utf-8'
+            charset = reply.headers.get_content_charset()
+            if not charset:  # this covers local files, but not really grr...
+                print(f"forcing charset for {url} ({orig_url})", file=sys.stderr)
+                charset = 'utf-8'
 
-        contents = reply.read().decode(charset)
-        if tag in ('script', 'style'):
-            contents = kill_js_comments(contents)
-            contents = f"/* {orig_url} imported via {' '.join(sys.argv)} */\n" + contents
+            contents = reply.read().decode(charset)
+            if tag in ('script', 'style'):
+                contents = kill_js_comments(contents)
+                contents = f"/* {orig_url} imported via {' '.join(sys.argv)} */\n" + contents
+        except Exception as e:
+            self.warn(f"{repr(e)} for tag {tag} at {url} ")
         return contents
 
     def format_attr(self, attr):
