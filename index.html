@@ -723,6 +723,16 @@ var wuwei = function() {
         },
     };
 
+    function createAudioContext() {
+        try {
+            return new AudioContext();
+        }
+        catch(err) {
+            console.warn(`problem setting up audio: ${err}`);
+        }
+        return undefined;
+    }
+
     const game = {
         objects: Object.create(null, counterer),
         liveInvaders: Object.create(null, counterer),
@@ -733,6 +743,12 @@ var wuwei = function() {
         level: 0, 
 
         paused: false,
+
+        audioContext: createAudioContext(),
+
+        sounds: {
+ 
+        },
 
         
         settings: {
@@ -952,6 +968,8 @@ var wuwei = function() {
             this.dy = dy;
             this.vsGroup = vsGroup;
             this.master = master;
+
+
         }
 
         behave(dt, frameNum) {
@@ -1189,6 +1207,7 @@ var wuwei = function() {
                 if(!game.invadersWon && game.livePlayers.count) {
                     this.nextShotMs = this.reloadMs();
                     
+
                     new Missile(
                         this.x, this.y,
                         0, game.settings.missileSpeed,

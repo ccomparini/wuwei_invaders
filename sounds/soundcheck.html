@@ -5,7 +5,11 @@
   </head>
   <body>
     <div id='sounds'>
-      <button onclick='startSoundcheck();'>start</button>
+      <dialog id='hack-to-force-interaction-for-audio-context'>
+        <form method="dialog">
+          <button onclick='startSoundcheck();'>BEGIN</button>
+        </form>
+      </dialog>
       <table>
         <tr data-expands>
           <td data-shows='@key'></td>
@@ -18,7 +22,6 @@
       let sounds = { };
       const uila = uiulator(sounds, document.getElementById('sounds'));
       import { loadSounds, playSound } from "./soundcheck.mjs";
-
 
       let audioCtx;
       window.startSoundcheck = function() {
@@ -40,6 +43,8 @@
         if(audioCtx)
             playSound(audioCtx, which);
       }
+
+      document.getElementById('hack-to-force-interaction-for-audio-context').showModal();
     </script>
   </body>
 </html>
