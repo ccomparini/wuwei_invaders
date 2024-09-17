@@ -5,10 +5,21 @@
   </head>
   <body>
     <div id='sounds'>
-      <dialog id='hack-to-force-interaction-for-audio-context'>
-        <form method="dialog">
-          <button onclick='startSoundcheck();'>BEGIN</button>
+      <dialog id='hack-to-force-interaction-for-audio-context' style='width: 45%'>
+        <p>In order to open an audio context, browsers require user interaction
+        before a page can initialize an <a href="https://webaudio.github.io/web-audio-api/#AudioContext">
+        audio&nbsp;context.</a>
+        <p>Overall, this is probably a good thing - without it, advertisers,
+        in their endless quest to make people want to close the current browser
+        window, would doubtless blast the most obnoxious sounds possible on page
+        load at every opportunity.
+        <p>Therefore, we humbly request your interaction, using the button below.
+        <form method="dialog" class="center-hack">
+          <button onclick='startSoundcheck();'>I HEREBY INTERACT WITH THIS PAGE</button>
         </form>
+        (See also this <a href="https://developer.chrome.com/blog/autoplay/#webaudio">
+        Chrome developer blog entry
+        </a>)
       </dialog>
       <table>
         <tr data-expands>
@@ -25,14 +36,6 @@
 
       let audioCtx;
       window.startSoundcheck = function() {
-          // Apparently because advertizers ruin everything, pages
-          // need some kind of user interaction before they can get
-          // an audio context (or you get a warning).  Hence the
-          // whole "start" button thing.
-          //  (warning: "The AudioContext was not allowed to start.
-          //  It must be resumed (or created) after a user gesture
-          //  on the page. https://goo.gl/7K7WLu")
-          // .. makes some sense, though it's annoying.
           audioCtx = new AudioContext();
           sounds = loadSounds(audioCtx, sounds);
           uila.update();
