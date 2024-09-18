@@ -10,5 +10,4 @@ FILES=(
     index.html
 )
 
-cp wuwei.html index.html
 zip $ZIPFILE ${FILES[@]}
