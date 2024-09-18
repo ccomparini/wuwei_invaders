@@ -1,5 +1,7 @@
 #!/bin/bash
 
-echo "Splatting index.html..."
-./util/embedify wuwei.html > index.html
+mkdir build
+
+echo "Making build/index.html..."
+./util/embedify wuwei.html > build/index.html
 
