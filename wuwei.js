@@ -10,7 +10,6 @@ var wuwei = function() {
         },
     };
 
-
     let nextObjId = 1;
 
     // when using objects as collections, it's awkward
@@ -647,163 +646,6 @@ var wuwei = function() {
 
     var showers = [ ];
 
-    // expands elements with "data-expand", creating one copy of the
-    // element for each item in the group specified, and with data-scope
-    // set to the corresponding item in the group.
-    function expandElements(protoElement, scope) {
-        if(!protoElement) return;
-
-        let dataset = protoElement.dataset || { };
-        let expand = dataset.expand;
-
-        scope = rescope(protoElement, scope);
-
-        if(expand) {
-            // We've got a "data-expand=x", which means we want to
-            // make a new element for each thing in collection x
-            let parsedFrom = parseDisplayDef(protoElement, expand, scope);
-
-            // at this point, we are going to expand this thing, and we
-            // don't want its clones inheriting "expand" (which could
-            // lead to infinite expansion), so kill the data-expand:
-            delete protoElement.dataset.expand;
-
-            // for each thing in the containingObject[variable],
-            // we need to make a copy of the prototype html element
-            // to represent that thing.  (let's say containing objects
-            // have to be maps because js isn't consistent about
-            // collections :P)
-            let objs = parsedFrom.containingObject[parsedFrom.variable];
-            for (const key in objs) {
-                
-                let newElem = protoElement.cloneNode(true);
-
-                // change the id of the clone, or else it inherits
-                // the id and we get duplicate ids:
-                newElem.id = newElem.id + "-" + key;
-
-                // tell the new element what scope it's in:
-                newElem.dataset.scope = expand + "." + key;
-
-                protoElement.parentElement.insertBefore(newElem, protoElement);
-            }
-
-            // finally, hide the element which we expanded (since it's
-            // the prototype and doesn't make sense to keep showing)
-            protoElement.style.display = 'none';
-        }
-
-        let kids = protoElement.children;
-        if(!kids) return;
-        for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
-            expandElements(kid, scope);
-        }
-    }
-
-    // Note:  elem is basically jammed back into the result
-    // (and not really used here) because doing so is convenient
-    // for callers.
-    function parseDisplayDef(elem, variable, scope) {
-        variable.replace(/[^A-Za-z_.]/g, "");
-        let parts = variable.split(".");
-
-        let obj = scope;
-
-        for(let pi = 0; pi < parts.length - 1; pi++) {
-            if(!obj) {
-                console.log("no such variable '" + parts[pi] + "' in '" + variable + "'");
-                break;
-            }
-            obj = obj[parts[pi]];
-        }
-
-        if(!obj) {
-            obj = new Map;
-            console.log("could not parse display def for " + variable);
-        }
-
-        return {
-            element: elem,
-            containingObject: obj,
-            variable: parts[parts.length - 1],
-        };
-    }
-
-    function rescope(elem, existingScope) {
-        if(elem.dataset && elem.dataset.scope) {
-            let ns = parseDisplayDef(elem, elem.dataset.scope, existingScope);
-            return ns.containingObject[ns.variable];
-        } else {
-            return existingScope;
-        }
-    }
-
-    function bindDisplay(display, scope) {
-        if(!display) return;
-        if(!display.dataset) return;
-
-        scope = rescope(display, scope);
- 
-        // ok let's say display elements have:
-        //  - (optionally) the element which sets the thing
-        //    in which case, in here, we set onChange or whatever
-        //    so like <blah data-controls="debug">. if set, this
-        //    would normally also be what it shows.
-        //  - (optionally) the element on which to display the thing
-        //    so like <blah data-shows="player.score">
-        let shows = display.dataset.shows || display.dataset.controls;
-        let ctrl  = display.dataset.controls;
-        if(shows) {
-            showers.push(parseDisplayDef(display, shows, scope));
-            delete display.dataset.shows; // so we don't bind it again
-        }
-
-        if(ctrl) {
-            let def = parseDisplayDef(display, ctrl, scope);
-            showers.push(def);
-            let el = def.element;
-            el.contenteditable = true; // doesn't seem to work; have to set in html?
-            el.addEventListener('change', function(ev) { updateControl(def) });
-            el.addEventListener('input',  function(ev) { updateControl(def) });
-            delete display.dataset.controls;
-        }
-
-        // controllers can be compound. i.e. we may
-        // pass in an outer element with inner elements
-        // displaying various things.  So recurse sub
-        // elements.
-        let kids = display.children;
-        for (let ci = 0; ci < kids.length; ci++) {
-            bindDisplay(kids[ci], scope);
-        }
-    }
-
-    function updateControl(def) {
-        let el = def.element;
-        if(el.innerText === undefined) {
-            def.containingObject[def.variable] = el.value;
-        } else {
-            def.containingObject[def.variable] = el.innerText;
-        }
-    }
-
-    function updateDisplays() {
-        for (let di = showers.length - 1; di >= 0; di--) {
-            let shower = showers[di];
-            let val = shower.containingObject[shower.variable];
-            if (typeof val === "function") {
-                val = val();
-            }
-            if(document.activeElement !== shower.element) {
-                shower.element.textContent = val;
-                shower.element.value = val; // for inputs
-                if(val !== undefined) {
-                    shower.element.style.width = val.length + "ch";
-                }
-            }
-        }
-    }
-
     function serverSocket() {
         const url = 'ws://' + location.hostname + ':29234/';
         const socket = new WebSocket(url);
@@ -923,20 +765,13 @@ var wuwei = function() {
                     this.pause();
             });
 
-            // See also:
-            //    https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements
-            //
-            setup.displays.forEach(function(el) { expandElements(el, game); });
-            setup.displays.forEach(function(el) { bindDisplay(el, game); });
             let lastUpdate = Date.now();
             let frameNum = 0;
-            var ctx = cleanCtx();
+            const ctx = cleanCtx();
             window.setInterval(function() {
-                updateDisplays();
-
-                var now = Date.now();
+                const now = Date.now();
                 if(!game.paused) {
-                    var deltaT = now - lastUpdate;
+                    const deltaT = now - lastUpdate;
                     for (let obj of Object.values(game.objects)) {
                         obj.behave(deltaT, frameNum);
                     }
@@ -952,6 +787,11 @@ var wuwei = function() {
                     frameNum++;
                }
                lastUpdate = now;
+
+               if(setup.onFrame) {
+                   setup.onFrame(game);
+               }
+
             }, updateInterval);
         }
     };

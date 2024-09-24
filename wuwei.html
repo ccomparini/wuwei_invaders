@@ -8,6 +8,7 @@
     <meta name="copyright" content="Christopher Comparini">
     <meta name="description" content="Wu Wei invaders">
     <meta name="category" content="games">
+    <script src="https://fbmstudios.net/uiulars/uiulator.js"> </script>
     <script src="virtual-game-controller.js"></script>
     <style type="text/css">
       div {
@@ -93,7 +94,7 @@
       </div>
       <span id="scoreboard">
         <h3>楬</h3>
-        <div id="score-player" data-expand="players">
+        <div id="score-player" data-expands="players">
           <span class="scorer-name" data-controls="name" contenteditable></span> :
           <span data-shows="stats.score"> </span>
         </div>
@@ -122,12 +123,15 @@
   </body>
   <script src="wuwei.js"></script>
   <script>
+    const scoreDisplay = uiulator(undefined, document.getElementById("scoreboard"));
     wuwei.play({
       playfield:  document.getElementById("playfield"),
-      displays: [
-        document.getElementById("scoreboard"),
-        //document.getElementById("settings"),
-      ],
+      onFrame: function(game) {
+        // ... uiulator is awkward, here.  hacking around it thus,
+        // for now:
+        scoreDisplay.setDataSource(game);
+        scoreDisplay.update();
+      },
       controllers: [
         {
           joystick: document.getElementById("joystick-p1"),
