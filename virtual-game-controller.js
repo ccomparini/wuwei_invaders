@@ -95,12 +95,15 @@ class VirtualGameController extends HTMLElement {
     // The idea here is style for sub props can be set using
     //  custom properties, like this:
     //  --[sub class]-[real css property] = [real css value]
-    // For example, to set a green border on the ball for the virtual
-    // joystick with id #joystick-1, you could do:
-    // #joystick-1 {
-    //   --slot-back: purple;
-    //   --ball-background: orange;
-    // }
+    // For example, to give the joystick a green ball on a
+    // red stick set in a purple and red slot, you could do
+    // something like:
+    //    #joystick-1 {
+    //      --ball: radial-gradient(#000000, #00ff2f); 
+    //      --stick: radial-gradient(#ff0000, #440000); 
+    //      --slot-back: purple;
+    //      --slot-front: red;
+    //    }
     // this is terribly brute force, but seems to be the best we can do?
     var subStyle = "\n\n";
     for(let subClass of this.#subStyles) {
