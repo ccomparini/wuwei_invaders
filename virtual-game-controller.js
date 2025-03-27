@@ -283,7 +283,7 @@ class VirtualJoystickElement extends VirtualGameController {
   defaultStyle() {
     return `
       .ball {
-        background: radial-gradient(#000000, #ae0f0f);
+        background: radial-gradient(at 20% 20%, #cc4444, #770000);
         width: 500%;
         aspect-ratio: 1 / 1;
         border-radius: 50%;
@@ -512,8 +512,8 @@ class VirtualGameButtonElement extends VirtualGameController {
   defaultStyle() {
     return `
       .frame {
-        background: linear-gradient(to right, #b00020, #580010);
-        border-radius: 50vb 50vb 50vb 50vb;
+        background: radial-gradient(at 0 0, #cc4444, #770000);
+        clip-path: ellipse(50% 50%);
         width: 70%;
         height: 70%;
       }
@@ -522,9 +522,6 @@ class VirtualGameButtonElement extends VirtualGameController {
         border-radius: 50%;
         width: 95%;
         height: 70%;
-      }
-      .button:active {
-        transform: translate(0, 25%);
       }
     `;
   }
