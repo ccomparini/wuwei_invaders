@@ -422,7 +422,8 @@ class VirtualGameButtonElement extends VirtualGameController {
 
   // Game controls are generally polled, but one thing we do care
   // about is if a button changed state.  This returns true if it
-  // has changed state since the last time something checked:
+  // has changed to being in the pressed ("down") state since the
+  // last time something checked:
   get transitionedDown() {
     if(this.#transitionedDown) {
       this.#transitionedDown = false;
@@ -439,6 +440,9 @@ class VirtualGameButtonElement extends VirtualGameController {
       this.#transitionedDown = true;
       this.transitionCount++;
     }
+    // depress the button part per the fraction, to 25% of
+    // the size of the thing:
+    this.#button.style.transform = `translate(0, ${25*frac}%)`;
   }
 
   initFromDataConfig() {
