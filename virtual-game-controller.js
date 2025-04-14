@@ -47,6 +47,12 @@ class VirtualGameController extends HTMLElement {
     return '';
   }
 
+  // helper to parse comma separated key control specs
+  parseKeysSpec(keysStr) {
+    const separator = /,\s*/;
+    return keysStr.split(separator);
+  }
+
   initGraphics() {
     // this makes it so you don't get a 0px x 0px (and thus
     // invisible) element by default.  it's very confusing
@@ -260,8 +266,10 @@ class VirtualJoystickElement extends VirtualGameController {
     //   data-axis-count
     //   data-x-range-deg
     //   data-y-range-pct
-    //   data-key-left
-    //   data-key-right
+    //   data-keys-left
+    //   data-keys-right
+    //   data-key-left  <deprecated>
+    //   data-key-right  <deprecated>
     if(typeof this.dataset.axisCount !== 'undefined') {
       this.initAxes(this.dataset.axisCount);
     }
@@ -272,11 +280,23 @@ class VirtualJoystickElement extends VirtualGameController {
       this.#yRangePct = this.dataset.yRangePct;
     }
     // key controls!  
+    if(typeof this.dataset.keysLeft !== 'undefined') {
+      for(const key of this.parseKeysSpec(this.dataset.keysLeft)) {
+        this.addAxisKeyControl(key, 0, -1.0);
+      }
+    }
+    if(typeof this.dataset.keysRight !== 'undefined') {
+      for(const key of this.parseKeysSpec(this.dataset.keysRight)) {
+        this.addAxisKeyControl(key, 0, 1.0);
+      }
+    }
     if(typeof this.dataset.keyLeft !== 'undefined') {
-        this.addAxisKeyControl(this.dataset.keyLeft, 0, -1.0);
+      // deprecated in favor of data-keys-left
+      this.addAxisKeyControl(this.dataset.keyLeft, 0, -1.0);
     }
     if(typeof this.dataset.keyRight !== 'undefined') {
-        this.addAxisKeyControl(this.dataset.keyRight, 0, 1.0);
+      // deprecated in favor of data-keys-right
+      this.addAxisKeyControl(this.dataset.keyRight, 0, 1.0);
     }
   }
 
@@ -458,8 +478,7 @@ class VirtualGameButtonElement extends VirtualGameController {
     }
 
     if(typeof keysStr !== 'undefined') {
-      const separator = /,\s*/;
-      const keys = keysStr.split(separator);
+      const keys = this.parseKeysSpec(keysStr)
 
       for(const key of keys) {
         this.addKeyControl(key, function(keyDown) {
