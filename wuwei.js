@@ -549,9 +549,13 @@ var wuwei = function() {
 
     function savedData(name) {
         const got = localStorage.getItem(name);
+        var result = {
+            name:       'Player 1',
+            appearance: '🔱',
+        }
         if(got) {
             try {
-                var result = JSON.parse(got)
+                result = JSON.parse(got)
             }
             catch(error) {
                 console.log(`${error} in '${got.value}'`);
